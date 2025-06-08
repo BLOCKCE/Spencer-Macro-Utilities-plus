@@ -1,4 +1,8 @@
 # Roblox Macro Client
+
+## This is a fork of Spencers Macro Utilities (https://github.com/Spencer0187/Roblox-Macro-Utilities)
+
+
 An open-source Windows C++ Roblox ImGui Macro with many features.
 
 To Compile, run the project in Visual Studio 2022 and build it. The main source code is located inside of Visual Studio/macroframework.cpp.
@@ -17,9 +21,9 @@ If you have another issue where keybinds don't work, restart your computer, it s
 
 In certain scenarios, when downgrading from a version with more features to a version with less features causes the program to crash on launch, either delete your RMCsettings.json file, or remove section_order_vector from the .json.
 
-![GitHub Releases](https://img.shields.io/github/downloads/Spencer0187/Roblox-Macro-Utilities/total.svg)
+![GitHub Releases](https://img.shields.io/github/downloads/TNTtp/Spencer-Macro-Utilities-plus/total.svg)
 
-## [DOWNLOAD THE LATEST VERSION](https://github.com/Spencer0187/Roblox-Macro-Utilities/releases/latest)
+## [DOWNLOAD THE LATEST VERSION](https://github.com/TNTtp/Spencer-Macro-Utilities-plus/releases/latest)
 
 ## Join the Roblox Glitching Discord! (I can help you with support)
 https://discord.gg/roblox-glitching-community-998572881892094012
@@ -42,6 +46,7 @@ https://discord.gg/roblox-glitching-community-998572881892094012
 14. Item-Clip
 15. Spam a Key/Button
 16. Intelligent Bhop/Bunnyhop
+17. Lag switch
 
 # AUTOMATICALLY SAVES YOUR SETTINGS WHEN CLOSED
 
