@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <vector>
 #define NOMINMAX
 #include <windows.h>
@@ -3152,7 +3152,7 @@ static void RunGUI()
 					ImGui::NewLine();
 					ImGui::TextWrapped("This will turn off the wifi for roblox");
 					ImGui::NewLine();
-					ImGui::TextWrapped("This can be used to find bugs or can be used to reser COM");
+					ImGui::TextWrapped("This can be used to reset COM");
 				}
 
             } else {
