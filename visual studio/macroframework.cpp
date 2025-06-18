@@ -1128,6 +1128,7 @@ const std::unordered_map<std::string, NumericVar> numeric_vars = {
 	{"vk_laughkey", &vk_laughkey},
 	{"vk_bouncekey", &vk_bouncekey},
 	{"vk_bunnyhopkey", &vk_bunnyhopkey},
+	{"vk_Lagkey", &vk_Lagkey},
 	{"selected_dropdown", &selected_dropdown},
 	{"vk_wallkey", &vk_wallkey},
 	{"PreviousWallWalkSide", &PreviousWallWalkSide},
