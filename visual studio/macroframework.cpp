@@ -286,7 +286,9 @@ int BunnyHopDelay = 10;
 int RobloxWallWalkValueDelay = 72720;
 float spam_delay = 20.0f;
 float maxfreezetime = 9.00f;
+float maxlagtime = 9.00f;
 int maxfreezeoverride = 50;
+int maxlagoverride = 50;
 int real_delay = 10000;
 int RobloxPixelValue = 716;
 int RobloxWallWalkValue = -94;
@@ -315,6 +317,7 @@ static bool wasLagPressed = false;
 // Timing and chrono
 auto rebindtime = std::chrono::steady_clock::now();
 auto suspendStartTime = std::chrono::steady_clock::time_point();
+auto lagStartTime = std::chrono::steady_clock::time_point();
 
 // Previous values (used for comparisons)
 static float PreviousSensValue = -1.0f;
@@ -1104,6 +1107,7 @@ const std::unordered_map<std::string, bool *> bool_vars = {
 	{"takeallprocessids", &takeallprocessids},
 	{"ontoptoggle", &ontoptoggle},
 	{"bunnyhopsmart", &bunnyhopsmart},
+	{"islagswitch", &islagswitch},
 };
 
 // Numeric variables
@@ -1137,6 +1141,8 @@ const std::unordered_map<std::string, NumericVar> numeric_vars = {
 	{"PreviousWallWalkValue", &PreviousWallWalkValue},
 	{"maxfreezetime", &maxfreezetime},
 	{"maxfreezeoverride", &maxfreezeoverride},
+	{"maxlagtime", &maxlagtime},
+	{"maxlagoverride", &maxlagoverride},
 	{"RobloxWallWalkValueDelay", &RobloxWallWalkValueDelay},
 	{"speed_strengthx", &speed_strengthx},
 	{"speedoffsetx", &speedoffsetx},
@@ -3145,6 +3151,20 @@ static void RunGUI()
 				}
 
 				if (selected_section == 14) { 
+					ImGui::SetNextItemWidth(60.0f);
+					ImGui::InputFloat("##FreezeFloat", &maxlagtime, 0.0f, 0.0f, "%.2f");
+					ImGui::SameLine();
+					ImGui::SetNextItemWidth(300.0f);
+					ImGui::SliderFloat("##FreezeSlider", &maxlagtime, 0.0f, 9.8f, "%.2f Seconds");
+
+					char maxlagoverrideBuffer[16];
+					std::snprintf(maxlagoverrideBuffer, sizeof(maxlagoverrideBuffer), "%d", maxlagoverride);
+
+					ImGui::SetNextItemWidth(50.0f);
+					if (ImGui::InputText("Modify 50ms Default Unfreeze Time (MS)", maxlagoverrideBuffer, sizeof(maxlagoverrideBuffer), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
+						maxlagoverride = std::atoi(maxlagoverrideBuffer);
+					}
+
 					ImGui::Checkbox("Switch from Hold Key to Toggle Key", &islagswitch);
 					ImGui::Separator();
 
@@ -3570,6 +3590,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			if (!HHJ) {
 
 				if (autotoggle) { // Auto-Key-Timer
+
 					HoldKey(0x39);
 					std::this_thread::sleep_for(std::chrono::milliseconds(550));
 					HoldKey(0x11);
@@ -3787,14 +3808,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				if (isLagPressed && !wasLagPressed ) {
 					isLag = !isLag;  // Toggle the freeze state
 					LagOrUnLagProcess(hProcess, isLag);
+					lagStartTime = std::chrono::steady_clock::now();  // Start the timer
 
 				}
 			}
 			else {  // Hold mode
 				if (isLagPressed) {
 					if (!isLag) {
+
 						LagOrUnLagProcess(hProcess, true);
 						isLag = true;
+						lagStartTime = std::chrono::steady_clock::now();  // Start the timer
 					}
 				}
 				else if (isLag) {
@@ -3802,6 +3826,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					isLag = false;
 				}
 			}
+
+			if (isLag) {
+				auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - lagStartTime).count();
+
+				if (elapsed >= (maxlagtime * 1000)) {
+					// Unsuspend for 50 ms
+					LagOrUnLagProcess(hProcess, false);
+					std::this_thread::sleep_for(std::chrono::milliseconds(maxlagoverride));
+					LagOrUnLagProcess(hProcess, true);
+
+					// Reset the timer
+					lagStartTime = std::chrono::steady_clock::now();
+				}
+			}
+
 			// Update the previous state
 			wasLagPressed = isLagPressed;
 		}
