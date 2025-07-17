@@ -3019,7 +3019,7 @@ static void RunGUI()
 			}
 
 			ImGui::SameLine(ImGui::GetWindowWidth() - 352);
-			ImGui::TextWrapped("AUTOSAVES ON QUIT     VERSION 3.0.0");
+			ImGui::TextWrapped("AUTOSAVES ON QUIT     VERSION 3.0.0.1");
 
 			if (shiftswitch) {
 				scancode_shift = 0x1D;
@@ -3976,7 +3976,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     if (!remoteVersion.empty()) 
     {
         remoteVersion = Trim(remoteVersion);
-        std::string localVersion = "3.0.0";
+        std::string localVersion = "3.0.0.1";
 
         if (remoteVersion != localVersion) 
         {
