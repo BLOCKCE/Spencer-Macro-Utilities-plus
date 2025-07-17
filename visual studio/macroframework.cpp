@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <vector>
 #define NOMINMAX
 #include <windows.h>
@@ -36,6 +36,7 @@
 #include <dwmapi.h>
 #include <variant>
 #include <algorithm>
+#include <string>
 
 // Library for HTTP (To get version data from my github page)
 #pragma comment(lib, "wininet.lib")
@@ -117,12 +118,16 @@ unsigned int vk_bouncekey = VkKeyScanEx('C', GetKeyboardLayout(0)) & 0xFF;
 unsigned int vk_leftbracket = MapVirtualKey(0x1A, MAPVK_VSC_TO_VK);
 unsigned int vk_bunnyhopkey = MapVirtualKey(0x39, MAPVK_VSC_TO_VK);
 
+//////////////////////////
+unsigned int vk_Lagkey = VK_F2;
+////////////////////////// 
+
 // ADD KEYBIND VARIABLES FOR EACH SECTION
 static const std::unordered_map<unsigned int, unsigned int *> section_to_key = {
 	{0, &vk_mbutton},   {1, &vk_f5},       {2, &vk_xbutton1}, {3, &vk_xkey},
 	{4, &vk_f8},        {5, &vk_zkey},     {6, &vk_xbutton2}, {7, &vk_f6},
 	{8, &vk_clipkey},   {9, &vk_laughkey}, {10, &vk_wallkey}, {11, &vk_leftbracket},
-	{12, &vk_bouncekey}, {13, &vk_bunnyhopkey}};
+	{12, &vk_bouncekey}, {13, &vk_bunnyhopkey}, {14, &vk_Lagkey}};
 
 
 const std::string G_SETTINGS_FILEPATH = "RMCSettings.json";
@@ -267,10 +272,16 @@ bool ontoptoggle = false;
 bool bunnyhoptoggled = false;
 bool bunnyhopsmart = true;
 
+//////////////////////////
+bool islagswitch = false;
+bool autoflickdir = true;
+bool lagoverlayswitch = false;
+////////////////////////// 
+
 // Section toggles and order
-constexpr int section_amounts = 14;
-bool section_toggles[14] = {true, true, true, true, true, false, true, true, true, false, false, false, false, false};
-int section_order[14] = {0, 1, 2, 3, 4, 5, 6, 13, 7, 8, 9, 10, 11, 12};
+constexpr int section_amounts = 15;
+bool section_toggles[15] = {true, true,  true,  true,  true,  false, true, true, true, false, false, false, false, false, true};
+int section_order[15] = {0, 14, 1, 2, 3, 4, 5, 6, 13, 7, 8, 9, 10, 11, 12};
 
 // Numeric settings
 int wallhop_dx = 300;
@@ -297,6 +308,15 @@ int WallhopDelay = 17;
 int AntiAFKTime = 15;
 int display_scale = 100;
 
+
+////////////////////////// 
+float maxlagtime = 9.00f;
+int maxlagoverride = 50;
+int ovarlayverticaloffset = 50;
+int ovarlayhorisontaloffset = 50;
+int g_textSize = 24;
+////////////////////////// 
+
 // Dropdown options
 const char* optionsforoffset[] = {"/e dance2", "/e laugh", "/e cheer"};
 
@@ -315,9 +335,17 @@ bool wallhopupdate = false;
 bool UserOutdated = false;
 static bool wasMButtonPressed = false;
 
+//////////////////////////
+static bool wasLagPressed = false;
+////////////////////////// 
+
 // Timing and chrono
 auto rebindtime = std::chrono::steady_clock::now();
 auto suspendStartTime = std::chrono::steady_clock::time_point();
+
+//////////////////////////
+auto lagStartTime = std::chrono::steady_clock::time_point();
+////////////////////////// 
 
 // Previous values (used for comparisons)
 static float PreviousSensValue = -1.0f;
@@ -329,6 +357,253 @@ static float windowOpacityPercent = 100.0f;
 typedef LONG(NTAPI *NtSuspendProcess)(HANDLE ProcessHandle);
 typedef LONG(NTAPI *NtResumeProcess)(HANDLE ProcessHandle);
 
+////////////////////////// 
+
+HWND g_overlay = nullptr;
+std::wstring g_overlayText = L"LagSwitch OFF";
+COLORREF g_textColor = RGB(255, 0, 0); // default green
+
+
+// Forward declaration
+void CreateOverlay(HWND parent);
+void DestroyOverlay();
+void UpdateOverlayPosition();
+
+
+
+LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg) {
+	case WM_PAINT: {
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hwnd, &ps);
+
+		// Clear background using transparent color key
+		RECT rc;
+		GetClientRect(hwnd, &rc);
+		HBRUSH hBrush = CreateSolidBrush(RGB(0, 0, 0));
+		FillRect(hdc, &rc, hBrush);
+		DeleteObject(hBrush);
+
+		SetBkMode(hdc, TRANSPARENT);
+		SetTextColor(hdc, g_textColor);
+
+		// 🆕 Use dynamic font size
+		int fontHeight = -g_textSize;
+		HFONT hFont = CreateFont(fontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+					 DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+					 DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+
+		HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
+
+		TextOut(hdc, 10, 10, g_overlayText.c_str(), (int)g_overlayText.length());
+
+		SelectObject(hdc, oldFont);
+		DeleteObject(hFont);
+
+		EndPaint(hwnd, &ps);
+		return 0;
+	}
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		return 0;
+	}
+	return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+
+
+
+
+
+HWND GetWindowFromProcess(const std::vector<HANDLE> &pids)
+{
+	HWND result = nullptr;
+
+	struct EnumContext {
+		const std::vector<HANDLE> *pids;
+		HWND *result;
+	} context = {&pids, &result};
+
+	EnumWindows(
+		[](HWND hwnd, LPARAM lParam) -> BOOL {
+			auto *ctx = reinterpret_cast<EnumContext *>(lParam);
+			DWORD winPid = 0;
+			GetWindowThreadProcessId(hwnd, &winPid);
+
+			for (const HANDLE &h : *ctx->pids) {
+				DWORD pid = GetProcessId(h);
+				if (pid == winPid && IsWindowVisible(hwnd)) {
+					*ctx->result = hwnd;
+					return FALSE; // stop enumeration
+				}
+			}
+			return TRUE; // continue
+		},
+		reinterpret_cast<LPARAM>(&context));
+
+	return result;
+}
+
+
+
+void CreateOverlay(HINSTANCE hInstance)
+{
+	if (g_overlay)
+		return; // already created
+
+	const wchar_t CLASS_NAME[] = L"OverlayClass";
+
+	static bool classRegistered = false;
+	if (!classRegistered) {
+		WNDCLASS wc = {};
+		wc.lpfnWndProc = OverlayWndProc; // your window proc function
+		wc.hInstance = hInstance;
+		wc.lpszClassName = CLASS_NAME;
+		wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+		wc.hbrBackground = nullptr;
+
+		if (!RegisterClass(&wc)) {
+			DWORD err = GetLastError();
+			if (err != ERROR_CLASS_ALREADY_EXISTS) // ignore if class already exists
+			{
+				wchar_t buffer[256];
+				swprintf(buffer, 256, L"RegisterClass failed with error code %lu",
+					 err);
+				MessageBox(nullptr, buffer, L"Error", MB_OK | MB_ICONERROR);
+				return;
+			}
+		}
+		classRegistered = true;
+	}
+
+	// Calculate center of screen for initial position
+	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+	int width = 300;
+	int height = 100;
+	int x = -1000;
+	int y = -1000;
+
+	g_overlay = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TRANSPARENT, CLASS_NAME,
+				   L"", WS_POPUP, x, y, width, height, nullptr, nullptr, hInstance,
+				   nullptr);
+
+
+	if (!g_overlay) {
+		DWORD err = GetLastError();
+		wchar_t buffer[256];
+		swprintf(buffer, 256, L"CreateWindowEx failed with error code %lu", err);
+		MessageBox(nullptr, buffer, L"Error", MB_OK | MB_ICONERROR);
+		return;
+	}
+
+	SetLayeredWindowAttributes(g_overlay, RGB(0, 0, 0), 255, LWA_COLORKEY);
+
+	ShowWindow(g_overlay, SW_SHOW);
+	UpdateWindow(g_overlay);
+	
+}
+
+
+void DestroyOverlay()
+{
+	if (g_overlay) {
+		DestroyWindow(g_overlay);
+		g_overlay = nullptr;
+	}
+}
+
+void UpdateOverlayToWindow(HWND overlayHwnd, HWND targetHwnd)
+{
+	if (!overlayHwnd || !targetHwnd)
+		return;
+
+	RECT rect;
+	if (GetWindowRect(targetHwnd, &rect)) {
+		int width = rect.right - rect.left;
+		int height = rect.bottom - rect.top;
+
+		SetWindowPos(overlayHwnd,
+			     HWND_TOPMOST, // insert after Roblox
+			     rect.left + ovarlayhorisontaloffset, rect.top + ovarlayverticaloffset,
+			     width, height, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+
+	}
+	
+	UpdateWindow(g_overlay);
+}
+
+
+
+
+
+
+const std::wstring FIREWALL_RULE_NAME = L"Roblox_Block";
+
+std::wstring GetExePathFromHandle(HANDLE hProcess)
+{
+	wchar_t exePath[MAX_PATH];
+	DWORD size = MAX_PATH;
+
+	if (QueryFullProcessImageNameW(hProcess, 0, exePath, &size)) {
+		return std::wstring(exePath);
+	} else {
+		return L"";
+	}
+}
+
+bool RunCommand(const std::wstring &cmd)
+{
+	STARTUPINFOW si = {sizeof(si)};
+	PROCESS_INFORMATION pi;
+	si.dwFlags = STARTF_USESHOWWINDOW;
+	si.wShowWindow = SW_HIDE;
+
+	// CreateProcess requires writable buffer, so copy cmd to wchar_t array
+	std::vector<wchar_t> cmdBuffer(cmd.begin(), cmd.end());
+	cmdBuffer.push_back(0);
+
+	if (!CreateProcessW(nullptr, cmdBuffer.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW,
+			    nullptr, nullptr, &si, &pi)) {
+		return false;
+	}
+
+	WaitForSingleObject(pi.hProcess, INFINITE);
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
+	return true;
+}
+
+bool BlockFirewallRule(const std::wstring &exePath)
+{
+	std::wstringstream cmd;
+	cmd << L"netsh advfirewall firewall add rule " << L"name=\"" << FIREWALL_RULE_NAME << L"\" "
+	    << L"dir=out action=block program=\"" << exePath << L"\" enable=yes";
+	return RunCommand(cmd.str());
+}
+
+bool UnblockFirewallRule()
+{
+	std::wstringstream cmd;
+	cmd << L"netsh advfirewall firewall delete rule name=\"" << FIREWALL_RULE_NAME << L"\"";
+	return RunCommand(cmd.str());
+}
+
+static void LagOrUnLagProcess(const std::vector<HANDLE> &pids, bool suspend)
+{
+	for (HANDLE pid : pids) {
+
+		std::wstring exePath = GetExePathFromHandle(pid);
+		if (suspend) {
+			BlockFirewallRule(exePath);
+		} else {
+			UnblockFirewallRule();
+		}
+	}
+}
+
+////////////////////////// 
 
 // Helper function to suspend or resume a process
 static void SuspendOrResumeProcess(NtSuspendProcess pfnSuspend, NtResumeProcess pfnResume, const std::vector<HANDLE>& pids, bool suspend)
@@ -677,20 +952,43 @@ static void WallhopThread() {
 		if (toggle_jump) {
 			HoldKey(0x39);
 		}
+		bool isDPressed = GetAsyncKeyState(VkKeyScanEx('D', GetKeyboardLayout(0)) & 0xFF) & 0x8000;
+		bool isAPressed = GetAsyncKeyState(VkKeyScanEx('A', GetKeyboardLayout(0)) & 0xFF) & 0x8000;
 
+		
 		if (wallhopswitch) {
-			MoveMouse(-wallhop_dx, 0);
+			
+			if (isDPressed && autoflickdir) {
+				MoveMouse(wallhop_dx, 0);
+			} else {
+				MoveMouse(-wallhop_dx, 0);
+			}
+			
 		} else {
-			MoveMouse(wallhop_dx, 0);
+			if (isAPressed && autoflickdir) {
+				MoveMouse(-wallhop_dx, 0);
+			} else {
+				MoveMouse(wallhop_dx, 0);
+			}
+			
+			
 		}
 
 		if (toggle_flick) {
 			if (wallhopswitch) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(WallhopDelay));
-				MoveMouse(-wallhop_dy, 0);
+				if (isDPressed && autoflickdir) {
+					MoveMouse(-wallhop_dx, 0);
+				} else {
+					MoveMouse(wallhop_dx, 0);
+				}
 			} else {
 				std::this_thread::sleep_for(std::chrono::milliseconds(WallhopDelay));
-				MoveMouse(wallhop_dy, 0);
+				if (isAPressed && autoflickdir) {
+					MoveMouse(wallhop_dx, 0);
+				} else {
+					MoveMouse(-wallhop_dx, 0);
+				}
 			}
 		}
 
@@ -928,13 +1226,13 @@ static std::string GetStringFromUrl(const wchar_t* url)
 static std::string GetRemoteVersion()
 {
     return GetStringFromUrl(
-	    L"https://raw.githubusercontent.com/Spencer0187/Spencer-Macro-Utilities/main/version");
+	    L"https://raw.githubusercontent.com/BLOCKCE/Spencer-Macro-Utilities-plus/main/version");
 }
 
 static std::string GetRemoteUpdateUrlTemplate()
 {
     return GetStringFromUrl(
-	    L"https://raw.githubusercontent.com/Spencer0187/Spencer-Macro-Utilities/main/.github/autoupdaterurl");
+	    L"https://raw.githubusercontent.com/BLOCKCE/Spencer-Macro-Utilities-plus/main/.github/autoupdaterurl");
 }
 
 // Helper function to download a file from a URL to a specified path
@@ -1317,6 +1615,12 @@ const std::unordered_map<std::string, bool *> bool_vars = {
 	{"takeallprocessids", &takeallprocessids},
 	{"ontoptoggle", &ontoptoggle},
 	{"bunnyhopsmart", &bunnyhopsmart},
+
+	////////////////////////// 
+	{"islagswitch", &islagswitch},
+	{"autoflickdir", &autoflickdir},
+	{"lagoverlayswitch", &lagoverlayswitch},
+	//////////////////////////
 };
 
 // Numeric variables
@@ -1361,6 +1665,14 @@ const std::unordered_map<std::string, NumericVar> numeric_vars = {
 	{"windowOpacityPercent", &windowOpacityPercent},
 	{"AntiAFKTime", &AntiAFKTime},
 	{"display_scale", &display_scale},
+
+	////////////////////////// 
+	{"vk_Lagkey", &vk_Lagkey},
+	{"maxlagtime", &maxlagtime},
+	{"ovarlayhorisontaloffset", &ovarlayhorisontaloffset},
+	{"ovarlayverticaloffset", &ovarlayverticaloffset},
+	{"g_textSize", &g_textSize},
+	//////////////////////////
 };
 
 // Char variables
@@ -1641,6 +1953,15 @@ void LoadSettings(const std::string& filepath, const std::string& profile_name) 
                          order.insert(order.begin() + 7, 13); // Insert at index 6 (7th element)
                      }
 				}
+
+
+				////////////////////////// 
+				if (std::find(order.begin(), order.end(), 14) == order.end() && order.size() >= 1) {
+					if (order.size() >= 2) {
+						order.insert(order.begin() + 2, 14); // Insert at index 1 (2nd element)
+					}
+				}
+				////////////////////////// 
         
                 size_t count = std::min(order.size(), static_cast<size_t>(section_amounts));
                 for (size_t i = 0; i < count; ++i) {
@@ -2259,7 +2580,11 @@ constexpr std::array<SectionConfig, section_amounts> SECTION_CONFIGS = {{
     {"Wall-Walk", "Walk Across Wall Seams Without Jumping"},
     {"Spam a Key", "Whenever You Press Your Keybind, it Spams the Other Button"},
     {"Ledge Bounce", "Briefly Falls off a Ledge to Then Bounce Off it While Falling"},
-    {"Smart Bunnyhop", "Intelligently enables or disables Bunnyhop for any Key"}
+    {"Smart Bunnyhop", "Intelligently enables or disables Bunnyhop for any Key"},
+
+	////////////////////////// 
+	{"Lag Switch", "Lags the game"}
+	//////////////////////////
 }};
 
 static void InitializeSections()
@@ -2646,9 +2971,12 @@ static void RunGUI()
 			ImGui::PushStyleColor(ImGuiCol_Text, macrotoggled ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
             ImGui::Checkbox("Macro Toggle (Anti-AFK remains!)", &macrotoggled); // Checkbox for toggling
 			ImGui::PopStyleColor();
-
 			ImGui::SameLine(ImGui::GetWindowWidth() - 790);
-			ImGui::TextWrapped("The ONLY official source for this is https://github.com/Spencer0187/Spencer-Macro-Utilities");
+
+			////////////////////////// 
+			ImGui::TextWrapped("This if a fork of https://github.com/Spencer0187/Roblox-Macro-Utilities");
+			////////////////////////// 
+
 			ImGui::TextWrapped("Roblox Executable Name:");
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(250.0f);
@@ -3232,6 +3560,7 @@ static void RunGUI()
 					ImGui::Checkbox("Switch to Left-Flick Wallhop", &wallhopswitch); // Left Sided wallhop switch
 					ImGui::Checkbox("Jump During Wallhop", &toggle_jump);
 					ImGui::Checkbox("Flick-Back During Wallhop", &toggle_flick);
+					ImGui::Checkbox("Auto flick direction", &autoflickdir);
 
 					ImGui::Separator();
 					ImGui::TextWrapped("IMPORTANT:");
@@ -3461,6 +3790,58 @@ static void RunGUI()
 					ImGui::TextWrapped("This will not be active unless you are currently inside of the target program.");
 				}
 
+				////////////////////////// 
+				// Lag
+				if (selected_section == 14) { 
+					ImGui::SetNextItemWidth(60.0f);
+					ImGui::InputFloat("##LagFloat", &maxlagtime, 0.0f, 0.0f, "%.2f");
+					ImGui::SameLine();
+					ImGui::SetNextItemWidth(300.0f);
+					ImGui::SliderFloat("##LagSlider", &maxlagtime, 0.0f, 9.8f, "%.2f Seconds");
+
+					char maxlagoverrideBuffer[16];
+					std::snprintf(maxlagoverrideBuffer, sizeof(maxlagoverrideBuffer), "%d", maxlagoverride);
+
+					ImGui::SetNextItemWidth(50.0f);
+					if (ImGui::InputText("Modify 50ms Default Unlag Time (MS)", maxlagoverrideBuffer, sizeof(maxlagoverrideBuffer), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
+						maxlagoverride = std::atoi(maxlagoverrideBuffer);
+					}
+
+					ImGui::Checkbox("Switch from Hold Key to Toggle Key", &islagswitch);
+					ImGui::Separator();
+					ImGui::Checkbox("Overlay", &lagoverlayswitch);
+					char maxhorisontaloverrideBuffer[16];
+					std::snprintf(maxhorisontaloverrideBuffer, sizeof(maxhorisontaloverrideBuffer), "%d", ovarlayhorisontaloffset);
+
+					ImGui::SetNextItemWidth(50.0f);
+					if (ImGui::InputText("Modify Horizontal Offset##hor", maxhorisontaloverrideBuffer, sizeof(maxhorisontaloverrideBuffer), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
+						ovarlayhorisontaloffset = std::atoi(maxhorisontaloverrideBuffer);
+					}
+					char maxverticaloverrideBuffer[16];
+					std::snprintf(maxverticaloverrideBuffer, sizeof(maxverticaloverrideBuffer), "%d", ovarlayverticaloffset);
+
+					ImGui::SetNextItemWidth(50.0f);
+					if (ImGui::InputText("Modify Vertical Offset##vert", maxverticaloverrideBuffer, sizeof(maxverticaloverrideBuffer), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
+						ovarlayverticaloffset = std::atoi(maxverticaloverrideBuffer);
+					}
+					char maxsizeoverrideBuffer[16];
+					std::snprintf(maxsizeoverrideBuffer, sizeof(maxsizeoverrideBuffer), "%d", g_textSize);
+
+					ImGui::SetNextItemWidth(50.0f);
+					if (ImGui::InputText("Modify Text Size##size", maxsizeoverrideBuffer, sizeof(maxsizeoverrideBuffer), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
+						g_textSize = std::atoi(maxsizeoverrideBuffer);
+					}
+					ImGui::Separator();
+
+					ImGui::TextWrapped("Explanation:");
+					ImGui::NewLine();
+					ImGui::TextWrapped("This will turn off the wifi for roblox");
+					ImGui::NewLine();
+					ImGui::TextWrapped("This can be used to reset COM");
+
+				}
+				////////////////////////// 
+
             } else {
                 ImGui::TextWrapped("Select a section to see its settings.");
             }
@@ -3669,6 +4050,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	auto now = std::chrono::steady_clock::now();
 	auto processchecktime = std::chrono::steady_clock::now();
 	static int counter = 0;
+
+	//////////////////////////
+	bool isLag = false;
+	////////////////////////// 
 
 	while (!done) {
     {
@@ -4068,6 +4453,88 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				}
 			}
 		}
+
+		////////////////////////// 
+		// Lag
+		if ((macrotoggled && notbinding && section_toggles[14])) {
+			bool isLagPressed = GetAsyncKeyState(vk_Lagkey) & 0x8000;
+
+			if (islagswitch) { // Toggle mode
+				if (isLagPressed && !wasLagPressed) {
+					isLag = !isLag; // Toggle the freeze state
+					LagOrUnLagProcess(hProcess, isLag);
+					lagStartTime =
+						std::chrono::steady_clock::now(); // Start the timer
+				}
+			} else { // Hold mode
+				if (isLagPressed) {
+					if (!isLag) {
+
+						LagOrUnLagProcess(hProcess, true);
+						isLag = true;
+						lagStartTime = std::chrono::steady_clock::
+							now(); // Start the timer
+					}
+				} else if (isLag) {
+					LagOrUnLagProcess(hProcess, false);
+					isLag = false;
+				}
+			}
+
+			if (isLag) {
+				auto elapsed =
+					std::chrono::duration_cast<std::chrono::milliseconds>(
+						std::chrono::steady_clock::now() - lagStartTime)
+						.count();
+
+				if (elapsed >= (maxlagtime * 1000)) {
+					// Unsuspend for 50 ms
+					LagOrUnLagProcess(hProcess, false);
+					std::this_thread::sleep_for(
+						std::chrono::milliseconds(maxlagoverride));
+					LagOrUnLagProcess(hProcess, true);
+
+					// Reset the timer
+					lagStartTime = std::chrono::steady_clock::now();
+				}
+			}
+
+			// Update the previous state
+			
+
+			HWND targetHwnd = GetWindowFromProcess(hProcess);
+			bool shouldShowOverlay = (targetHwnd && IsForegroundWindowProcess(hProcess) &&
+						  !IsIconic(targetHwnd));
+
+			if (lagoverlayswitch && shouldShowOverlay) {
+				if (!g_overlay) {
+					HINSTANCE hInstance = GetModuleHandle(nullptr);
+					CreateOverlay(hInstance);
+				}
+				UpdateOverlayToWindow(g_overlay, targetHwnd);
+			} else {
+				if (g_overlay) {
+					DestroyOverlay();
+				}
+			}
+
+			if (isLagPressed) {
+				g_textColor = RGB(0, 255, 0); // green
+				g_overlayText = L"LagSwitch ON";
+			} else {
+				g_textColor = RGB(255, 0, 0); // red
+				g_overlayText = L"LagSwitch OFF";
+			}
+
+			if (g_overlay && wasLagPressed != isLagPressed) {
+				InvalidateRect(g_overlay, nullptr, TRUE);
+
+			}
+
+			wasLagPressed = isLagPressed;
+
+		}
+		////////////////////////// 
 
 		// Every second, check if roblox continues to exist.
 		if (++counter % 100 == 0) {  // Check time every 100th iteration
