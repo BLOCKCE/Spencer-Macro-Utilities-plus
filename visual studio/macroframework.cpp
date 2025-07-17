@@ -276,6 +276,7 @@ bool bunnyhopsmart = true;
 bool islagswitch = false;
 bool autoflickdir = true;
 bool lagoverlayswitch = false;
+bool lastpressedAD = false;
 ////////////////////////// 
 
 // Section toggles and order
@@ -337,6 +338,7 @@ static bool wasMButtonPressed = false;
 
 //////////////////////////
 static bool wasLagPressed = false;
+static bool lastLag = false;
 ////////////////////////// 
 
 // Timing and chrono
@@ -952,20 +954,19 @@ static void WallhopThread() {
 		if (toggle_jump) {
 			HoldKey(0x39);
 		}
-		bool isDPressed = GetAsyncKeyState(VkKeyScanEx('D', GetKeyboardLayout(0)) & 0xFF) & 0x8000;
-		bool isAPressed = GetAsyncKeyState(VkKeyScanEx('A', GetKeyboardLayout(0)) & 0xFF) & 0x8000;
+		
 
 		
 		if (wallhopswitch) {
 			
-			if (isDPressed && autoflickdir) {
+			if (!lastpressedAD && autoflickdir) {
 				MoveMouse(wallhop_dx, 0);
 			} else {
 				MoveMouse(-wallhop_dx, 0);
 			}
 			
 		} else {
-			if (isAPressed && autoflickdir) {
+			if (lastpressedAD && autoflickdir) {
 				MoveMouse(-wallhop_dx, 0);
 			} else {
 				MoveMouse(wallhop_dx, 0);
@@ -977,14 +978,14 @@ static void WallhopThread() {
 		if (toggle_flick) {
 			if (wallhopswitch) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(WallhopDelay));
-				if (isDPressed && autoflickdir) {
+				if (!lastpressedAD && autoflickdir) {
 					MoveMouse(-wallhop_dx, 0);
 				} else {
 					MoveMouse(wallhop_dx, 0);
 				}
 			} else {
 				std::this_thread::sleep_for(std::chrono::milliseconds(WallhopDelay));
-				if (isAPressed && autoflickdir) {
+				if (lastpressedAD && autoflickdir) {
 					MoveMouse(wallhop_dx, 0);
 				} else {
 					MoveMouse(-wallhop_dx, 0);
@@ -4518,7 +4519,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				}
 			}
 
-			if (isLagPressed) {
+			if (isLag) {
 				g_textColor = RGB(0, 255, 0); // green
 				g_overlayText = L"LagSwitch ON";
 			} else {
@@ -4526,14 +4527,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				g_overlayText = L"LagSwitch OFF";
 			}
 
-			if (g_overlay && wasLagPressed != isLagPressed) {
+			if (g_overlay && lastLag != isLag) {
 				InvalidateRect(g_overlay, nullptr, TRUE);
 
 			}
 
 			wasLagPressed = isLagPressed;
+			lastLag = isLag;
 
 		}
+
+		bool isDPressed = GetAsyncKeyState(VkKeyScanEx('D', GetKeyboardLayout(0)) & 0xFF) & 0x8000;
+		bool isAPressed = GetAsyncKeyState(VkKeyScanEx('A', GetKeyboardLayout(0)) & 0xFF) & 0x8000;
+
+		if (isAPressed) {
+			lastpressedAD = true;
+		} else if (isDPressed) {
+			lastpressedAD = false;
+		}
+		
+
 		////////////////////////// 
 
 		// Every second, check if roblox continues to exist.
