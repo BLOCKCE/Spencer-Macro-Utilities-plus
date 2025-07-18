@@ -70,3 +70,4 @@ This application makes client-side HTTP requests solely for version checking and
 
 - Freezing code framework based on [craftwar/suspend](https://github.com/craftwar/suspend)
 - ImGui GUI library used, obviously... [ocornut/imgui](https://github.com/ocornut/imgui)
+- Ui and theme editor made by [copyrighttxt/spencer-macro-utilities-modified](https://github.com/copyrighttxt/spencer-macro-utilities-modified)
