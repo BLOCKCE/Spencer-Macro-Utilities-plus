@@ -37,6 +37,7 @@
 #include <variant>
 #include <algorithm>
 #include <string>
+#include <limits>
 
 // Library for HTTP (To get version data from my github page)
 #pragma comment(lib, "wininet.lib")
@@ -48,6 +49,112 @@
 using json = nlohmann::json;
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+// Theme system
+struct Theme {
+    std::string name;
+    ImVec4 bg_dark;
+    ImVec4 bg_medium;
+    ImVec4 bg_light;
+    ImVec4 accent_primary;
+    ImVec4 accent_secondary;
+    ImVec4 text_primary;
+    ImVec4 text_secondary;
+    ImVec4 success_color;
+    ImVec4 warning_color;
+    ImVec4 error_color;
+    ImVec4 border_color;
+    float window_rounding;
+    float frame_rounding;
+    float button_rounding;
+};
+
+// Default themes
+std::vector<Theme> defaultthemes = {
+    {
+        "Modern Dark",
+        ImVec4(0.08f, 0.08f, 0.12f, 1.0f),
+        ImVec4(0.12f, 0.12f, 0.16f, 1.0f),
+        ImVec4(0.16f, 0.16f, 0.20f, 1.0f),
+        ImVec4(0.20f, 0.60f, 1.0f, 1.0f),
+        ImVec4(0.15f, 0.50f, 0.85f, 1.0f),
+        ImVec4(0.95f, 0.95f, 0.95f, 1.0f),
+        ImVec4(0.70f, 0.70f, 0.70f, 1.0f),
+        ImVec4(0.20f, 0.80f, 0.40f, 1.0f),
+        ImVec4(0.90f, 0.60f, 0.20f, 1.0f),
+        ImVec4(0.90f, 0.30f, 0.30f, 1.0f),
+        ImVec4(0.20f, 0.20f, 0.25f, 1.0f),
+        8.0f, 4.0f, 4.0f
+    },
+    {
+        "Cyberpunk",
+        ImVec4(0.05f, 0.05f, 0.10f, 1.0f),
+        ImVec4(0.10f, 0.10f, 0.15f, 1.0f),
+        ImVec4(0.15f, 0.15f, 0.20f, 1.0f),
+        ImVec4(0.00f, 0.80f, 1.0f, 1.0f),
+        ImVec4(0.00f, 0.60f, 0.80f, 1.0f),
+        ImVec4(0.90f, 0.90f, 1.0f, 1.0f),
+        ImVec4(0.60f, 0.60f, 0.80f, 1.0f),
+        ImVec4(0.00f, 1.0f, 0.50f, 1.0f),
+        ImVec4(1.0f, 0.50f, 0.00f, 1.0f),
+        ImVec4(1.0f, 0.20f, 0.40f, 1.0f),
+        ImVec4(0.00f, 0.40f, 0.60f, 1.0f),
+        6.0f, 3.0f, 3.0f
+    },
+    {
+        "Forest Green",
+        ImVec4(0.05f, 0.12f, 0.08f, 1.0f),
+        ImVec4(0.08f, 0.16f, 0.12f, 1.0f),
+        ImVec4(0.12f, 0.20f, 0.16f, 1.0f),
+        ImVec4(0.20f, 0.80f, 0.40f, 1.0f),
+        ImVec4(0.15f, 0.60f, 0.30f, 1.0f),
+        ImVec4(0.90f, 0.95f, 0.90f, 1.0f),
+        ImVec4(0.70f, 0.80f, 0.70f, 1.0f),
+        ImVec4(0.30f, 0.90f, 0.50f, 1.0f),
+        ImVec4(0.90f, 0.70f, 0.20f, 1.0f),
+        ImVec4(0.80f, 0.30f, 0.30f, 1.0f),
+        ImVec4(0.15f, 0.30f, 0.20f, 1.0f),
+        10.0f, 5.0f, 5.0f
+    },
+    {
+        "Sunset Orange",
+        ImVec4(0.12f, 0.08f, 0.05f, 1.0f),
+        ImVec4(0.16f, 0.12f, 0.08f, 1.0f),
+        ImVec4(0.20f, 0.16f, 0.12f, 1.0f),
+        ImVec4(1.0f, 0.50f, 0.20f, 1.0f),
+        ImVec4(0.80f, 0.40f, 0.15f, 1.0f),
+        ImVec4(1.0f, 0.95f, 0.90f, 1.0f),
+        ImVec4(0.80f, 0.70f, 0.60f, 1.0f),
+        ImVec4(0.40f, 0.80f, 0.30f, 1.0f),
+        ImVec4(1.0f, 0.70f, 0.20f, 1.0f),
+        ImVec4(0.90f, 0.30f, 0.30f, 1.0f),
+        ImVec4(0.30f, 0.20f, 0.15f, 1.0f),
+        12.0f, 6.0f, 6.0f
+    },
+    {
+        "Purple Haze",
+        ImVec4(0.10f, 0.05f, 0.15f, 1.0f),
+        ImVec4(0.15f, 0.10f, 0.20f, 1.0f),
+        ImVec4(0.20f, 0.15f, 0.25f, 1.0f),
+        ImVec4(0.80f, 0.40f, 1.0f, 1.0f),
+        ImVec4(0.60f, 0.30f, 0.80f, 1.0f),
+        ImVec4(0.95f, 0.90f, 1.0f, 1.0f),
+        ImVec4(0.70f, 0.60f, 0.80f, 1.0f),
+        ImVec4(0.40f, 0.80f, 0.60f, 1.0f),
+        ImVec4(1.0f, 0.60f, 0.40f, 1.0f),
+        ImVec4(0.90f, 0.30f, 0.50f, 1.0f),
+        ImVec4(0.25f, 0.15f, 0.30f, 1.0f),
+        8.0f, 4.0f, 4.0f
+    }
+};
+
+std::vector<Theme> themes = defaultthemes;
+
+// Current theme index and custom theme
+int current_theme_index = 0;
+Theme custom_theme = themes[0]; // Initialize with first theme
+bool show_theme_editor = false;
+bool theme_modified = false;
 
 // DirectX11 Variables
 ID3D11Device *g_pd3dDevice = NULL;
@@ -61,6 +168,10 @@ void CleanupDeviceD3D();
 void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+static void RenderSectionSettings(int section);
+static void RenderThemeEditor();
+static void ApplyTheme(const Theme &theme);
 
 // TO PUT IN A KEYBOARD KEY, GO TO https://www.millisecond.com/support/docs/current/html/language/scancodes.htm
 // Convert the scancode into hexadecimal before putting it into the HoldKey or ReleaseKey functions
@@ -223,8 +334,8 @@ char KeyBuffer[256] = "None";
 char KeyBufferalt[256] = "None";
 char KeyBufferhuman[256] = "None";
 char KeyBufferhumanalt[256] = "None";
-char ItemDesyncSlot[256] = "5";
-char ItemSpeedSlot[256] = "3";
+char ItemDesyncSlot[256] = "1";
+char ItemSpeedSlot[256] = "1";
 char ItemClipSlot[256] = "7";
 char ItemClipDelay[256] = "34";
 char BunnyHopDelayChar[256] = "10";
@@ -380,9 +491,9 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hwnd, &ps);
 
-		// Clear background using transparent color key
 		RECT rc;
 		GetClientRect(hwnd, &rc);
+
 		HBRUSH hBrush = CreateSolidBrush(RGB(0, 0, 0));
 		FillRect(hdc, &rc, hBrush);
 		DeleteObject(hBrush);
@@ -390,7 +501,6 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		SetBkMode(hdc, TRANSPARENT);
 		SetTextColor(hdc, g_textColor);
 
-		// 🆕 Use dynamic font size
 		int fontHeight = -g_textSize;
 		HFONT hFont = CreateFont(fontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
 					 DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -398,7 +508,15 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
 		HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
 
-		TextOut(hdc, 10, 10, g_overlayText.c_str(), (int)g_overlayText.length());
+		// Calculate bounding box for text
+		RECT textRect = {10, 10, rc.right - 10, rc.bottom - 10};
+		DrawTextW(hdc, g_overlayText.c_str(), -1, &textRect,
+			  DT_LEFT | DT_TOP | DT_CALCRECT);
+
+		// Optional: Expand window or clip region based on textRect if needed
+
+		// Actually draw text
+		DrawTextW(hdc, g_overlayText.c_str(), -1, &textRect, DT_LEFT | DT_TOP);
 
 		SelectObject(hdc, oldFont);
 		DeleteObject(hFont);
@@ -406,10 +524,13 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		EndPaint(hwnd, &ps);
 		return 0;
 	}
-	case WM_DESTROY:
+
+	case WM_DESTROY: 
 		PostQuitMessage(0);
 		return 0;
 	}
+
+
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
@@ -482,10 +603,10 @@ void CreateOverlay(HINSTANCE hInstance)
 	// Calculate center of screen for initial position
 	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
 	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-	int width = 300;
-	int height = 100;
-	int x = -1000;
-	int y = -1000;
+	int width = screenWidth;
+	int height = screenHeight;
+	int x = -std::numeric_limits<int>::max();
+	int y = -std::numeric_limits<int>::max();
 
 	g_overlay = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TRANSPARENT, CLASS_NAME,
 				   L"", WS_POPUP, x, y, width, height, nullptr, nullptr, hInstance,
@@ -533,7 +654,7 @@ void UpdateOverlayToWindow(HWND overlayHwnd, HWND targetHwnd)
 
 	}
 	
-	UpdateWindow(g_overlay);
+	
 }
 
 
@@ -955,18 +1076,19 @@ static void WallhopThread() {
 			HoldKey(0x39);
 		}
 		
+        const bool lastpressed = lastpressedAD;
 
 		
 		if (wallhopswitch) {
 			
-			if (!lastpressedAD && autoflickdir) {
+			if (!lastpressed && autoflickdir) {
 				MoveMouse(wallhop_dx, 0);
 			} else {
 				MoveMouse(-wallhop_dx, 0);
 			}
 			
 		} else {
-			if (lastpressedAD && autoflickdir) {
+			if (lastpressed && autoflickdir) {
 				MoveMouse(-wallhop_dx, 0);
 			} else {
 				MoveMouse(wallhop_dx, 0);
@@ -978,14 +1100,14 @@ static void WallhopThread() {
 		if (toggle_flick) {
 			if (wallhopswitch) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(WallhopDelay));
-				if (!lastpressedAD && autoflickdir) {
+				if (!lastpressed && autoflickdir) {
 					MoveMouse(-wallhop_dx, 0);
 				} else {
 					MoveMouse(wallhop_dx, 0);
 				}
 			} else {
 				std::this_thread::sleep_for(std::chrono::milliseconds(WallhopDelay));
-				if (lastpressedAD && autoflickdir) {
+				if (lastpressed && autoflickdir) {
 					MoveMouse(wallhop_dx, 0);
 				} else {
 					MoveMouse(-wallhop_dx, 0);
@@ -1737,6 +1859,76 @@ void SaveSettings(const std::string& filepath, const std::string& profile_name) 
     current_profile_data["screen_width"] = screen_width;
     current_profile_data["screen_height"] = screen_height;
 
+	// Save theme data
+    current_profile_data["current_theme_index"] = current_theme_index;
+    current_profile_data["show_theme_editor"] = show_theme_editor;
+    
+    // Save custom theme if it exists
+    json custom_theme_json;
+    custom_theme_json["name"] = custom_theme.name;
+    custom_theme_json["bg_dark"] = {custom_theme.bg_dark.x, custom_theme.bg_dark.y, custom_theme.bg_dark.z, custom_theme.bg_dark.w};
+    custom_theme_json["bg_medium"] = {custom_theme.bg_medium.x, custom_theme.bg_medium.y, custom_theme.bg_medium.z, custom_theme.bg_medium.w};
+    custom_theme_json["bg_light"] = {custom_theme.bg_light.x, custom_theme.bg_light.y, custom_theme.bg_light.z, custom_theme.bg_light.w};
+    custom_theme_json["accent_primary"] = {custom_theme.accent_primary.x, custom_theme.accent_primary.y, custom_theme.accent_primary.z, custom_theme.accent_primary.w};
+    custom_theme_json["accent_secondary"] = {custom_theme.accent_secondary.x, custom_theme.accent_secondary.y, custom_theme.accent_secondary.z, custom_theme.accent_secondary.w};
+    custom_theme_json["text_primary"] = {custom_theme.text_primary.x, custom_theme.text_primary.y, custom_theme.text_primary.z, custom_theme.text_primary.w};
+    custom_theme_json["text_secondary"] = {custom_theme.text_secondary.x, custom_theme.text_secondary.y, custom_theme.text_secondary.z, custom_theme.text_secondary.w};
+    custom_theme_json["success_color"] = {custom_theme.success_color.x, custom_theme.success_color.y, custom_theme.success_color.z, custom_theme.success_color.w};
+    custom_theme_json["warning_color"] = {custom_theme.warning_color.x, custom_theme.warning_color.y, custom_theme.warning_color.z, custom_theme.warning_color.w};
+    custom_theme_json["error_color"] = {custom_theme.error_color.x, custom_theme.error_color.y, custom_theme.error_color.z, custom_theme.error_color.w};
+    custom_theme_json["border_color"] = {custom_theme.border_color.x, custom_theme.border_color.y, custom_theme.border_color.z, custom_theme.border_color.w};
+    custom_theme_json["window_rounding"] = custom_theme.window_rounding;
+    custom_theme_json["frame_rounding"] = custom_theme.frame_rounding;
+    custom_theme_json["button_rounding"] = custom_theme.button_rounding;
+    current_profile_data["custom_theme"] = custom_theme_json;
+
+    current_profile_data["themes"] = {};
+
+    auto vecDiff = [](const ImVec4 &v1, const ImVec4 &v2) {
+	    return v1.x != v2.x || v1.y != v2.y || v1.z != v2.z || v1.w != v2.w;
+    };
+
+    for (size_t i = 0; i < themes.size(); ++i) {
+        const Theme& a = themes[i];
+        const Theme& b = defaultthemes[i];
+
+        if (
+            a.name != b.name ||
+            vecDiff(a.bg_dark, b.bg_dark) ||
+            vecDiff(a.bg_medium, b.bg_medium) ||
+            vecDiff(a.bg_light, b.bg_light) ||
+            vecDiff(a.accent_primary, b.accent_primary) ||
+            vecDiff(a.accent_secondary, b.accent_secondary) ||
+            vecDiff(a.text_primary, b.text_primary) ||
+            vecDiff(a.text_secondary, b.text_secondary) ||
+            vecDiff(a.success_color, b.success_color) ||
+            vecDiff(a.warning_color, b.warning_color) ||
+            vecDiff(a.error_color, b.error_color) ||
+            vecDiff(a.border_color, b.border_color) ||
+            a.window_rounding != b.window_rounding ||
+            a.frame_rounding != b.frame_rounding ||
+            a.button_rounding != b.button_rounding
+        ) {
+            json a_json;
+            a_json["name"] = a.name;
+            a_json["bg_dark"] = {a.bg_dark.x, a.bg_dark.y, a.bg_dark.z, a.bg_dark.w};
+            a_json["bg_medium"] = {a.bg_medium.x, a.bg_medium.y, a.bg_medium.z, a.bg_medium.w};
+            a_json["bg_light"] = {a.bg_light.x, a.bg_light.y, a.bg_light.z, a.bg_light.w};
+            a_json["accent_primary"] = {a.accent_primary.x, a.accent_primary.y, a.accent_primary.z, a.accent_primary.w};
+            a_json["accent_secondary"] = {a.accent_secondary.x, a.accent_secondary.y, a.accent_secondary.z, a.accent_secondary.w};
+            a_json["text_primary"] = {a.text_primary.x, a.text_primary.y, a.text_primary.z, a.text_primary.w};
+            a_json["text_secondary"] = {a.text_secondary.x, a.text_secondary.y, a.text_secondary.z, a.text_secondary.w};
+            a_json["success_color"] = {a.success_color.x, a.success_color.y, a.success_color.z, a.success_color.w};
+            a_json["warning_color"] = {a.warning_color.x, a.warning_color.y, a.warning_color.z, a.warning_color.w};
+            a_json["error_color"] = {a.error_color.x, a.error_color.y, a.error_color.z, a.error_color.w};
+            a_json["border_color"] = {a.border_color.x, a.border_color.y, a.border_color.z, a.border_color.w};
+            a_json["window_rounding"] = a.window_rounding;
+            a_json["frame_rounding"] = a.frame_rounding;
+            a_json["button_rounding"] = a.button_rounding;
+            current_profile_data["themes"][a.name] = a_json;
+        }
+    }
+
     // --- Profile Handling ---
     json root_json_output = json::object(); // This will be written to the file
 
@@ -1980,6 +2172,85 @@ void LoadSettings(const std::string& filepath, const std::string& profile_name) 
         }
         if (settings_to_load.contains("screen_height") && settings_to_load["screen_height"].is_number_integer()) {
             screen_height = settings_to_load.value("screen_height", screen_height);
+        }
+
+		
+        // Load theme data
+        current_theme_index = settings_to_load.value("current_theme_index", 0);
+        show_theme_editor = settings_to_load.value("show_theme_editor", false);
+
+        // Load custom theme if it exists
+        if (settings_to_load.contains("custom_theme") && current_theme_index == themes.size()) {
+            json custom_theme_json = settings_to_load["custom_theme"];
+            custom_theme.name = custom_theme_json.value("name", "Custom Theme");
+
+            auto load_color = [](const json& j, const std::string& key) -> ImVec4 {
+                if (j.contains(key) && j[key].is_array() && j[key].size() == 4) {
+                    return ImVec4(j[key][0], j[key][1], j[key][2], j[key][3]);
+                }
+                return ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+            };
+
+            custom_theme.bg_dark = load_color(custom_theme_json, "bg_dark");
+            custom_theme.bg_medium = load_color(custom_theme_json, "bg_medium");
+            custom_theme.bg_light = load_color(custom_theme_json, "bg_light");
+            custom_theme.accent_primary = load_color(custom_theme_json, "accent_primary");
+            custom_theme.accent_secondary = load_color(custom_theme_json, "accent_secondary");
+            custom_theme.text_primary = load_color(custom_theme_json, "text_primary");
+            custom_theme.text_secondary = load_color(custom_theme_json, "text_secondary");
+            custom_theme.success_color = load_color(custom_theme_json, "success_color");
+            custom_theme.warning_color = load_color(custom_theme_json, "warning_color");
+            custom_theme.error_color = load_color(custom_theme_json, "error_color");
+            custom_theme.border_color = load_color(custom_theme_json, "border_color");
+            custom_theme.window_rounding = custom_theme_json.value("window_rounding", 8.0f);
+            custom_theme.frame_rounding = custom_theme_json.value("frame_rounding", 4.0f);
+            custom_theme.button_rounding = custom_theme_json.value("button_rounding", 4.0f);
+        }
+
+        auto load_color = [](const json& j, const std::string& key) -> ImVec4 {
+            if (j.contains(key) && j[key].is_array() && j[key].size() == 4) {
+                return ImVec4(j[key][0], j[key][1], j[key][2], j[key][3]);
+            }
+            return ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+        };
+
+        // Load all themes from settings
+        if (settings_to_load.contains("themes") && settings_to_load["themes"].is_object()) {
+            for (const auto& [key, theme_json] : settings_to_load["themes"].items()) {
+                std::string name = theme_json.value("name", key);
+
+                Theme loaded_theme = {
+                    name,
+                    load_color(theme_json, "bg_dark"),
+                    load_color(theme_json, "bg_medium"),
+                    load_color(theme_json, "bg_light"),
+                    load_color(theme_json, "accent_primary"),
+                    load_color(theme_json, "accent_secondary"),
+                    load_color(theme_json, "text_primary"),
+                    load_color(theme_json, "text_secondary"),
+                    load_color(theme_json, "success_color"),
+                    load_color(theme_json, "warning_color"),
+                    load_color(theme_json, "error_color"),
+                    load_color(theme_json, "border_color"),
+                    theme_json.value("window_rounding", 8.0f),
+                    theme_json.value("frame_rounding", 4.0f),
+                    theme_json.value("button_rounding", 4.0f)
+                };
+
+                // Check if theme with same name exists
+                bool found = false;
+                for (auto& theme : themes) {
+                    if (theme.name == name) {
+                        theme = loaded_theme; // Replace existing
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    themes.push_back(loaded_theme); // Append if not found
+                }
+            }
         }
 
     } catch (const json::exception& e) {
@@ -2942,172 +3213,208 @@ static void RunGUI()
             // ImGui window dimensions
             ImVec2 display_size = ImGui::GetIO().DisplaySize;
 
+			// Apply current theme
+            const Theme& current_theme = (current_theme_index < themes.size()) ? themes[current_theme_index] : custom_theme;
+            ApplyTheme(current_theme);
+
             // Set the size of the main ImGui window to fill the screen, fitting to the top left
             ImGui::SetNextWindowSize(display_size, ImGuiCond_Always);
             ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+            
+            ImGui::Begin("##MainWindow", nullptr, 
+                ImGuiWindowFlags_NoTitleBar | 
+                ImGuiWindowFlags_NoResize | 
+                ImGuiWindowFlags_NoMove | 
+                ImGuiWindowFlags_NoBringToFrontOnFocus |
+                ImGuiWindowFlags_NoNav);
 
-            // Create the main window with the specified flags
-            ImGui::Begin("My ImGUI Window", nullptr, window_flags); // Main ImGui window
+            // Header section
+            ImGui::BeginChild("Header", ImVec2(display_size.x - 32, 105), true);
 
-			// Enable ImGUI Debug Mode
-			// ImGui::ShowMetricsWindow();
+            // Title and status
+            ImGui::PushFont(mainfont);
+            ImGui::TextColored(current_theme.accent_primary, "ROBLOX MACRO UTILITIES");
+            ImGui::PopFont();
 
-            // Top settings child window (occupying 20% of the screen height)
-            float settings_panel_height = display_size.y * 0.2f;
-            ImGui::BeginChild("GlobalSettings", ImVec2(display_size.x - 16, settings_panel_height), true);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20);
 
-            // Start of Global Settings
-            ImGui::TextWrapped("Global Settings");
-			if (UserOutdated) {
-				ImGui::SameLine(135);
-				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
-				ImGui::TextWrapped("(OUTDATED VERSION)");
-				ImGui::PopStyleColor();
-			}
+            // Status indicator
+            ImGui::PushStyleColor(ImGuiCol_Text, macrotoggled ? current_theme.success_color : current_theme.error_color);
+            ImGui::Text(macrotoggled ? "ACTIVE" : "INACTIVE");
+            ImGui::PopStyleColor();
 
-			ImGui::SameLine(ImGui::GetWindowWidth() - 795);
-			ImGui::TextWrapped("DISCLAIMER: THIS IS NOT A CHEAT, IT NEVER INTERACTS WITH ROBLOX MEMORY.");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20);
 
-			// Macro Toggle Checkbox
-			ImGui::PushStyleColor(ImGuiCol_Text, macrotoggled ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-            ImGui::Checkbox("Macro Toggle (Anti-AFK remains!)", &macrotoggled); // Checkbox for toggling
-			ImGui::PopStyleColor();
-			ImGui::SameLine(ImGui::GetWindowWidth() - 790);
+            // Process status
+            ImGui::Text("Process: ");
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, processFound ? current_theme.success_color : current_theme.error_color);
+            ImGui::Text(processFound ? "Connected" : "Not Found");
+            ImGui::PopStyleColor();
 
-			////////////////////////// 
-			ImGui::TextWrapped("This if a fork of https://github.com/Spencer0187/Roblox-Macro-Utilities");
-			////////////////////////// 
+            // Version info
+            ImGui::SameLine(ImGui::GetWindowWidth() - 200);
+            if (UserOutdated) {
+                ImGui::PushStyleColor(ImGuiCol_Text, current_theme.warning_color);
+                ImGui::Text("UPDATE AVAILABLE");
+                ImGui::PopStyleColor();
+            } else {
+                ImGui::TextColored(current_theme.text_secondary, "v3.0.0.2");
+            }
+            
+            // Quick controls
+            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
 
-			ImGui::TextWrapped("Roblox Executable Name:");
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(250.0f);
+            ImGui::Checkbox("Macro Toggle", &macrotoggled);
+            ImGui::SameLine();
+            ImGui::Checkbox("Anti-AFK", &antiafktoggle);
+            ImGui::SameLine();
+            ImGui::Checkbox("Always On Top", &ontoptoggle);
+            ImGui::SameLine();
 
-			ImGui::InputText("##SettingsTextbox", settingsBuffer, sizeof(settingsBuffer), ImGuiInputTextFlags_CharsNoBlank); // Textbox for input, remove blank characters
+            // Opacity slider
+            ImGui::Text("Opacity:");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(100);
+            if (ImGui::SliderFloat("##Opacity", &windowOpacityPercent, 20.0f, 100.0f, "%.0f%%")) {
+                float alphaFraction = windowOpacityPercent / 100.0f;
+                BYTE alphaByte = static_cast<BYTE>(alphaFraction * 255.0f);
+                SetLayeredWindowAttributes(hwnd, 0, alphaByte, LWA_ALPHA);
+            }
 
-			ImGui::SameLine();
+            ImGui::SameLine();
+            if (ImGui::Button("Theme Editor")) {
+                show_theme_editor = !show_theme_editor;
+            }
 
-			ImDrawList* drawList = ImGui::GetWindowDrawList();
-			ImVec2 pos = ImGui::GetCursorScreenPos();
-			pos.y += ImGui::GetTextLineHeight() / 2 - 3;
-			ImU32 color = processFound ? IM_COL32(0, 255, 0, 255) : IM_COL32(255, 0, 0, 255);
+            
 
-			drawList->AddCircleFilled(ImVec2(pos.x + 5, pos.y + 5), 5, color);
-			ImGui::Dummy(ImVec2(5 * 2, 5 * 2));
+            ImGui::EndChild();
 
-			if (!processFound) {
-				ImGui::SameLine();
-				ImGui::TextWrapped("Roblox Not Found");
-			}
+            // Global Settings section
+            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 8);
+            ImGui::BeginChild("GlobalSettings", ImVec2(display_size.x - 32, 150), true);
 
-			ImGui::SameLine(ImGui::GetWindowWidth() - 435);
+            ImGui::TextColored(current_theme.accent_primary, "GLOBAL SETTINGS");
+            ImGui::Separator();
+            ImGui::Spacing();
 
-			ImGui::TextWrapped("Force-Set Chat Open Key to \"/\" (Most Stable):");
-			ImGui::SameLine();
-			ImGui::Checkbox("##ChatOverride", &chatoverride);
+            // First row
+            ImGui::Text("Roblox Executable:");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(200);
+            ImGui::InputText("##RobloxExe", settingsBuffer, sizeof(settingsBuffer), ImGuiInputTextFlags_CharsNoBlank);
 
-			ImGui::Checkbox("Switch Macro From \"Left Shift\" to \"Control\" for Shiftlock", &shiftswitch); // Checkbox for toggling
-			ImGui::SameLine();
-			ImGui::Checkbox("Toggle Anti-AFK", &antiafktoggle);
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(30.0f);
-			if (ImGui::InputText("##AntiAFKTime", AntiAFKTimeChar, sizeof(AntiAFKTimeChar), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-				try {
-					AntiAFKTime = std::stoi(AntiAFKTimeChar);
-				} catch (const std::invalid_argument &e) {
-				} catch (const std::out_of_range &e) {
-				}
-			}
+            ImGui::SameLine();
+            ImGui::Text("Sensitivity:");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(80);
+            if (ImGui::InputText("##Sensitivity", RobloxSensValue, sizeof(RobloxSensValue), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
+                PreviousSensValue = -1;
+            }
 
-			ImGui::SameLine(ImGui::GetWindowWidth() - 352);
-			ImGui::TextWrapped("AUTOSAVES ON QUIT     VERSION 3.0.0.1");
+            ImGui::SameLine();
+	    ImGui::TextWrapped("FPS:");
+	    ImGui::SameLine();
+	    ImGui::SetNextItemWidth(40.0f);
+	    if (ImGui::InputText("##FPS", RobloxFPSChar, sizeof(RobloxFPSChar),
+				 ImGuiInputTextFlags_CharsDecimal |
+					 ImGuiInputTextFlags_CharsNoBlank)) {
+		    try {
+			    RobloxFPS = std::stoi(RobloxFPSChar);
+		    } catch (const std::invalid_argument &e) {
+		    } catch (const std::out_of_range &e) {
+		    }
+	    }
 
-			if (shiftswitch) {
-				scancode_shift = 0x1D;
-			} else {
-				scancode_shift = 0x2A;
-			}
-			ImGui::AlignTextToFramePadding();
-			ImGui::TextWrapped("Roblox Sensitivity (0-4):");
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(70.0f);
-			if (ImGui::InputText("##Sens", RobloxSensValue, sizeof(RobloxSensValue), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-				PreviousSensValue = -1;
-			}
-			ImGui::SameLine();
-			ImGui::TextWrapped("Your Roblox FPS:");
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(40.0f);
-			if (ImGui::InputText("##FPS", RobloxFPSChar, sizeof(RobloxFPSChar), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-				try {
-					RobloxFPS = std::stoi(RobloxFPSChar);
-				} catch (const std::invalid_argument &e) {
-				} catch (const std::out_of_range &e) {
-				}
-			}
-			ImGui::SameLine();
-			ImGui::Text("Game Uses Cam-Fix:");
-			ImGui::SameLine();
-			
-			if (ImGui::Checkbox("##CamfixToggle", &camfixtoggle) || PreviousSensValue == -1) {
-				wallhopupdate = false;
-				if (PreviousSensValue != -1) { // Localize wallhop updates only to cam-fix
-					wallhopupdate = true;
-				}
-				PreviousSensValue = -1;
+            ImGui::SameLine();
+            ImGui::Text("Cam-Fix:");
+            ImGui::SameLine();
+            if (ImGui::Checkbox("##CamFix", &camfixtoggle) || PreviousSensValue == -1) {
+                wallhopupdate = false;
+                if (PreviousSensValue != -1) {
+                    wallhopupdate = true;
+                }
+                PreviousSensValue = -1;
+                PreviousWallWalkValue = -1;
 
-				PreviousWallWalkValue = -1;
-				try {
-					if (wallhopupdate) {
-						float factor = camfixtoggle ? 1.388888889f : 1.0f / 1.388888889f;
-						if (wallhopswitch) {
-							wallhop_dx = std::round(std::stoi(WallhopPixels) * (camfixtoggle ? -factor : factor));
-							wallhop_dy = std::round(std::stoi(WallhopPixels) * (camfixtoggle ? factor : -factor));
-						} else {
-							wallhop_dx = std::round(std::stoi(WallhopPixels) * factor);
-							wallhop_dy = std::round(std::stoi(WallhopPixels) * -factor);
-							sprintf(WallhopPixels, "%d", wallhop_dx);
-						}
-					}
-				} catch (const std::invalid_argument &) {
-				} catch (const std::out_of_range &) {
-				}
+                try {
+                    if (wallhopupdate) {
+                        float factor = camfixtoggle ? 1.388888889f : 1.0f / 1.388888889f;
+                        if (wallhopswitch) {
+                            wallhop_dx = std::round(std::stoi(WallhopPixels) * (camfixtoggle ? -factor : factor));
+                            wallhop_dy = std::round(std::stoi(WallhopPixels) * (camfixtoggle ? factor : -factor));
+                        } else {
+                            wallhop_dx = std::round(std::stoi(WallhopPixels) * factor);
+                            wallhop_dy = std::round(std::stoi(WallhopPixels) * -factor);
+                            sprintf(WallhopPixels, "%d", wallhop_dx);
+                        }
+                    }
+                } catch (...) {}
 
-				float CurrentWallWalkValue = atof(RobloxSensValue); // Wallwalk
+                float CurrentWallWalkValue = atof(RobloxSensValue);
+                float baseValue = camfixtoggle ? 500.0f : 360.0f;
+                wallwalk_strengthx = -static_cast<int>(std::round((baseValue / CurrentWallWalkValue) * 0.13f));
+                wallwalk_strengthy = static_cast<int>(std::round((baseValue / CurrentWallWalkValue) * 0.13f));
+                sprintf(RobloxWallWalkValueChar, "%d", wallwalk_strengthx);
 
-				float baseValue = camfixtoggle ? 500.0f : 360.0f;
-				wallwalk_strengthx = -static_cast<int>(std::round((baseValue / CurrentWallWalkValue) * 0.13f));
-				wallwalk_strengthy = static_cast<int>(std::round((baseValue / CurrentWallWalkValue) * 0.13f));
+                float CurrentSensValue = atof(RobloxSensValue);
+                try {
+                    float baseValue = camfixtoggle ? 500.0f : 360.0f;
+                    float multiplier = (359.0f / 360.0f) * (359.0f / 360.0f);
+                    RobloxPixelValue = static_cast<int>(std::round((baseValue / CurrentSensValue) * multiplier));
+                } catch (...) {}
 
-				sprintf(RobloxWallWalkValueChar, "%d", wallwalk_strengthx);
+                PreviousSensValue = CurrentSensValue;
+                sprintf(RobloxPixelValueChar, "%d", RobloxPixelValue);
+                try {
+                    chatkey = ChatKeyChar;
+                    speed_strengthx = std::stoi(RobloxPixelValueChar);
+                    speed_strengthy = -std::stoi(RobloxPixelValueChar);
+                } catch (...) {}
+            }
 
-				float CurrentSensValue = atof(RobloxSensValue); // Speedglitch
+            // Second row
+            ImGui::Text("Chat Override:");
+            ImGui::SameLine();
+            ImGui::Checkbox("##ChatOverride", &chatoverride);
 
-				try {
-					float baseValue = camfixtoggle ? 500.0f : 360.0f;
-					float multiplier = (359.0f / 360.0f) * (359.0f / 360.0f);
-					RobloxPixelValue = static_cast<int>(std::round((baseValue / CurrentSensValue) * multiplier));
-				} catch (const std::invalid_argument &) {
-				} catch (const std::out_of_range &) {
-				}
+            ImGui::SameLine();
+            ImGui::Text("Shift to Control:");
+            ImGui::SameLine();
+            ImGui::Checkbox("##ShiftSwitch", &shiftswitch);
 
-				PreviousSensValue = CurrentSensValue;
-				sprintf(RobloxPixelValueChar, "%d", RobloxPixelValue);
-				try { // Error Handling
-					chatkey = ChatKeyChar;
-					speed_strengthx = std::stoi(RobloxPixelValueChar);
-					speed_strengthy = -std::stoi(RobloxPixelValueChar);
-				} catch (const std::invalid_argument &e) {
-				} catch (const std::out_of_range &e) {
-				}
+            if (shiftswitch) {
+                scancode_shift = 0x1D;
+            } else {
+                scancode_shift = 0x2A;
+            }
 
-			}
+            ImGui::SameLine();
+            ImGui::Text("Chat Key:");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(50);
+            if (ImGui::InputText("##ChatKeyGlobal", ChatKeyChar, sizeof(ChatKeyChar), ImGuiInputTextFlags_CharsNoBlank)) {
+                if (strlen(ChatKeyChar) > 1) {
+                    ChatKeyChar[1] = '\0';
+                }
+                vk_chatkey = ChatKeyCharToVK(ChatKeyChar);
+            }
 
-			static bool show_settings_menu = false;
+            static bool show_settings_menu = false;
 
-			ImGui::SameLine(ImGui::GetWindowWidth() - 110);
-			if (ImGui::Button("Settings:")) {
+			ImGui::SameLine(ImGui::GetWindowWidth() - 425);
+
+            if (ImGui::Button("Extra Settings")) {
 				show_settings_menu = !show_settings_menu;
 			}
+
+            ImGui::SameLine();
+			
+            ProfileUI::DrawProfileManagerUI();
+            
 
 			if (show_settings_menu) {
 				// Get the main window size
@@ -3158,739 +3465,204 @@ static void RunGUI()
 
             ImGui::EndChild(); // End Global Settings child window
 
-			// Calculate left panel width and height
-			float left_panel_width = ImGui::GetWindowSize().x * 0.3f - 23;
-
-			ImGui::BeginChild("LeftScrollSection", ImVec2(left_panel_width, ImGui::GetWindowSize().y - settings_panel_height - 20), true);
-
-			for (size_t display_index = 0; display_index < section_amounts; ++display_index) {
-
-				int i = section_order[display_index]; // Get section index from order array
-
-				ImGui::PushID(i);
-
-				float buttonWidth = left_panel_width - ImGui::GetStyle().FramePadding.x * 2;
-
-				// Set up button colors based on toggle state
-				if (section_toggles[i]) {
-					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.29f, 0.45f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.26f, 0.59f, 0.98f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.06f, 0.53f, 0.98f, 1.0f));
-				} else {
-					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.29f, 0.15f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.98f, 0.59f, 0.26f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.98f, 0.53f, 0.06f, 1.0f));
-				}
-
-				// Calculate button height based on text
-				ImVec2 titleSize = ImGui::CalcTextSize(sections[i].title.c_str(), nullptr, true);
-				ImVec2 descriptionSize = ImGui::CalcTextSize(sections[i].description.c_str(), nullptr, true, buttonWidth - 20);
-				float buttonHeight = titleSize.y + descriptionSize.y + ImGui::GetStyle().FramePadding.y * 2;
-
-
-				// Create the button with a custom layout
-				if (ImGui::GetScrollMaxY() == 0) {
-					if (ImGui::Button("", ImVec2(buttonWidth - 7, buttonHeight))) {
-						selected_section = i;
-					}
-				} else {
-					if (ImGui::Button("", ImVec2(buttonWidth - 18, buttonHeight))) {
-						selected_section = i;
-					}
-				}
-
-
-				// Drag and Drop Source
-				if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-					ImGui::SetDragDropPayload("DND_SECTION", &display_index, sizeof(int)); // Dragging by visual index
-					ImGui::EndDragDropSource();
-				}
-
-				if (ImGui::BeginDragDropTarget()) {
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_SECTION")) {
-						int payload_index = *(const int *)payload->Data;
-						std::swap(section_order[payload_index], section_order[display_index]);
-					}
-					ImGui::EndDragDropTarget();
-				}
-
-				// Custom text rendering on buttons
-
-				ImVec2 buttonPos = ImGui::GetItemRectMin();
-				ImVec2 textPos = ImVec2(buttonPos.x + ImGui::GetStyle().FramePadding.x, buttonPos.y + ImGui::GetStyle().FramePadding.y);
-				ImDrawList* drawList = ImGui::GetWindowDrawList();
-				drawList->AddText(textPos, IM_COL32(255, 255, 255, 255), sections[i].title.c_str());
-
-				// Wrap and draw description
-				std::stringstream ss(sections[i].description);
-				std::string word, currentLine;
-				textPos.y += titleSize.y;
-				while (ss >> word) {
-					std::string potentialLine = currentLine + (currentLine.empty() ? "" : " ") + word;
-					ImVec2 potentialLineSize = ImGui::CalcTextSize(potentialLine.c_str());
-
-				if (ImGui::GetScrollMaxY() == 0) { // No scrollbar
-					if (potentialLineSize.x > buttonWidth - 7) {
-						// Draw the current line and move to the next
-						drawList->AddText(textPos, IM_COL32(255, 255, 255, 255), currentLine.c_str());
-						textPos.y += potentialLineSize.y;
-						currentLine = word;
-					} else {
-						currentLine = potentialLine;
-					}
-				} else {
-					if (potentialLineSize.x > buttonWidth - 18) { // Scrollbar
-						// Draw the current line and move to the next
-						drawList->AddText(textPos, IM_COL32(255, 255, 255, 255), currentLine.c_str());
-						textPos.y += potentialLineSize.y;
-						currentLine = word;
-					} else {
-						currentLine = potentialLine;
-					}
-				}
-				}
-
-				if (!currentLine.empty()) {
-					drawList->AddText(textPos, IM_COL32(255, 255, 255, 255), currentLine.c_str());
-				}
-
-				ImGui::PopStyleColor(3);
-				ImGui::PopID();
-
-				ImGui::Separator();
-			}
-
-			ImGui::EndChild();
-
-            // Right section
-            ImGui::SameLine(); // Move to the right of the left section
-
-            // Right child window with dynamic sizing
-            ImGui::BeginChild("RightSection", ImVec2(display_size.x - 23 - left_panel_width, display_size.y - settings_panel_height - 20), true);
-
-            // Display different content based on the selected section
-			if (selected_section >= 0 && selected_section < sections.size()) {
-				// Display section title and keybind UI
-				ImGui::TextWrapped("Settings for %s", sections[selected_section].title.c_str());
-				ImGui::Separator();
-				ImGui::NewLine();
-				ImGui::TextWrapped("Keybind:");
-				ImGui::SameLine();
-
-				// Keybind button
-				if (ImGui::Button(KeyButtonText.c_str())) {
-					notbinding = false;
-					bindingMode = true;
-					KeyButtonText = "Press a Key...";
-				}
-
-				ImGui::SameLine();
-
-				// Handle key bindings for all sections
-				if (section_to_key.count(selected_section)) {
-					unsigned int* key = section_to_key.at(selected_section);
-					*key = BindKeyMode(*key);
-					ImGui::SetNextItemWidth(150.0f);
-					GetKeyNameFromHex(*key);
-				}
-
-				ImGui::InputText("##KeyBufferHuman", KeyBufferhuman, sizeof(KeyBufferhuman), ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_ReadOnly);
-				ImGui::SameLine();
-				ImGui::TextWrapped("Key Binding");
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(50.0f);
-
-				ImGui::InputText("##KeyBuffer", KeyBuffer, sizeof(KeyBuffer), ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CharsHexadecimal);
-
-				ImGui::SameLine();
-				ImGui::TextWrapped("Key Binding (Hexadecimal)");
-				ImGui::TextWrapped("Toggle Macro:");
-				ImGui::SameLine();
-				if (selected_section >= 0 && selected_section < section_amounts) {
-					ImGui::Checkbox(("##SectionToggle" + std::to_string(selected_section)).c_str(), &section_toggles[selected_section]);
-				}
-				ImGui::SameLine(243);
-				ImGui::TextWrapped("(Human-Readable)");
-
-				if (selected_section == 0) { // Freeze Macro
-					ImGui::TextWrapped("Automatically Unfreeze for default 50ms after this amount of seconds (Anti-Internet-Kick)");
-					ImGui::SetNextItemWidth(60.0f);
-					ImGui::InputFloat("##FreezeFloat", &maxfreezetime, 0.0f, 0.0f, "%.2f");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(300.0f);
-					ImGui::SliderFloat("##FreezeSlider", &maxfreezetime, 0.0f, 9.8f, "%.2f Seconds");
-
-					char maxfreezeoverrideBuffer[16];
-					std::snprintf(maxfreezeoverrideBuffer, sizeof(maxfreezeoverrideBuffer), "%d", maxfreezeoverride);
-
-					ImGui::SetNextItemWidth(50.0f);
-					if (ImGui::InputText("Modify 50ms Default Unfreeze Time (MS)", maxfreezeoverrideBuffer, sizeof(maxfreezeoverrideBuffer), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-						maxfreezeoverride = std::atoi(maxfreezeoverrideBuffer);
-					}
-
-					ImGui::Checkbox("Allow Roblox to be frozen while not tabbed in", &freezeoutsideroblox);
-					ImGui::Checkbox("Switch from Hold Key to Toggle Key", &isfreezeswitch);
-					if (isfreezeswitch || takeallprocessids) {
-						freezeoutsideroblox = true;
-					}
-
-					ImGui::Checkbox("Freeze all Found Processes Instead of Newest", &takeallprocessids);
-
-					ImGui::SameLine();
-					ImGui::TextWrapped("(ONLY EVER USE FOR COMPATIBILITY ISSUES WITH NON-ROBLOX GAMES)");
-					ImGui::Separator();
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped("Hold the hotkey to freeze your game, let go of it to release it. Suspending your game also pauses "
-										"ALL network and physics activity that the server sends or recieves from you.");
-
-				}
-
-				if (selected_section == 1) { // Item Desync
-					ImGui::TextWrapped("Gear Slot:");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(30.0f);
-					ImGui::InputText("##ItemDesync", ItemDesyncSlot, sizeof(ItemDesyncSlot), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-					try {
-						desync_slot = std::stoi(ItemDesyncSlot);
-					} catch (const std::invalid_argument &e) {
-					} catch (const std::out_of_range &e) {
-					}
-					ImGui::Separator();
-					ImGui::TextWrapped("Equip your item inside of the slot you have picked here, then hold the keybind for 4-7 seconds");
-					ImGui::Separator();
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped("This Macro rapidly sends number inputs to your roblox client, enough that the server begins to throttle "
-										"you. The item that you're holding must not make a serverside sound, else desyncing yourself will be "
-										"very buggy, and you will be unable to send any physics data to the server. Once you have desynced, "
-										"the server will assume you're not holding an item, but your client will, which permanently enables "
-										"client-side collision on the item.");
-					ImGui::Separator();
-					ImGui::TextWrapped(
-										"Also, for convenience sake, you cannot activate desync unless you're tabbed into roblox, You will "
-										"most likely crash any other program if you activate it in there.");
-				}
-
-				if (selected_section == 2) { // HHJ
-					ImGui::Checkbox("Automatically time inputs", &autotoggle);
-					ImGui::SameLine();
-					ImGui::TextWrapped("(EXTREMELY BUGGY/EXPERIMENTAL, WORKS BEST ON HIGH FPS AND SHALLOW ANGLE TO WALL)");
-					ImGui::Checkbox("Reduce Time Spent Frozen (For speedrunning only)", &fasthhj);
-					ImGui::Separator();
-					ImGui::TextWrapped("IMPORTANT:");
-					ImGui::TextWrapped("FOR MOST OPTIMAL RESULTS PLEASE SET YOUR SENS AND CAM FIX ABOVE!");
-					ImGui::Separator();
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped("This macro abuses Roblox's conversion from angular velocity to regular velocity. If you put your "
-										"back against a wall, rotate left 20-30 degrees, turn around 180 degrees, hold jump, and press W "
-										"as you land on the floor, then, activate the macro, and let go of W, if you did it correctly, "
-										"you will rotate into the wall, and get your feet stuck inside of it, the macro freezes the game "
-										"during this process, and you will be catapulted up DEPENDANT ON YOUR CENTER OF MASS OFFSET "
-										"Bigger COM offset = Easier to perform and higher height");
-				}
-
-				if (selected_section == 3) { // Speedglitch
-
-					float CurrentSensValue = atof(RobloxSensValue);
-					if (CurrentSensValue != PreviousSensValue) {
-						if (camfixtoggle) {
-							try {
-								RobloxPixelValue = static_cast<int>(((500.0f / CurrentSensValue) * (static_cast<float>(359) / 360)) + 0.5f);
-							} catch (const std::invalid_argument &e) {
-							} catch (const std::out_of_range &e) {
-							}
-							
-						} else {
-							try {
-								RobloxPixelValue = static_cast<int>(((360.0f / CurrentSensValue) * (static_cast<float>(359) / 360)) + 0.5f);
-							} catch (const std::invalid_argument &e) {
-							} catch (const std::out_of_range &e) {
-							}
-						}
-						PreviousSensValue = CurrentSensValue;
-						sprintf(RobloxPixelValueChar, "%d", RobloxPixelValue);
-					}
-
-					ImGui::TextWrapped("Pixel Value for 180 Degree Turn BASED ON SENSITIVITY:");
-					ImGui::SetNextItemWidth(90.0f);
-					ImGui::SameLine();
-					if (ImGui::InputText("##PixelValue", RobloxPixelValueChar, sizeof(RobloxPixelValueChar), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-						try {
-							speed_strengthx = std::stoi(RobloxPixelValueChar);
-							speed_strengthy = -std::stoi(RobloxPixelValueChar);
-						} catch (const std::invalid_argument &e) {
-						} catch (const std::out_of_range &e) {
-						}
-					}
-
-					ImGui::Checkbox("Switch from Toggle Key to Hold Key", &isspeedswitch);
-
-					ImGui::Separator();
-					ImGui::TextWrapped("IMPORTANT: FOR MOST OPTIMAL RESULTS, INPUT YOUR ROBLOX INGAME SENSITIVITY!");
-					ImGui::TextWrapped("FPS DOES AFFECT IT, HOWEVER, IT SHOULD WORK ON ALL!");
-					ImGui::TextWrapped("TICK OR UNTICK THE CHECKBOX DEPENDING ON WHETHER THE GAME USES CAM-FIX MODULE OR NOT. "
-										"If you don't know, do BOTH and check which one provides you with a 180 degree rotation. "
-										"Also, for convenience sake, you cannot activate speedglitch unless you're tabbed into roblox.");
-					ImGui::Separator();
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped("This macro uses the way a changed center of mass affects your movement. If you offset your COM "
-										"in any way, and then toggle the macro, you will rotate 180 degrees every frame, holding W and "
-										"jump during this will catapult you forward.");
-				}
-
-				if (selected_section == 4) { // Gear Unequip COM speed
-					ImGui::TextWrapped("Gear Slot:");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(30.0f);
-					if (ImGui::InputText("##Gearslot", ItemSpeedSlot, sizeof(ItemSpeedSlot), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-						try {
-							speed_slot = std::stoi(ItemSpeedSlot);
-							chatkey = ChatKeyChar;
-						} catch (const std::invalid_argument &e) {
-						} catch (const std::out_of_range &e) {
-						}
-					}
-
-					ImGui::TextWrapped("Type in a custom chat message! (Disables gear equipping, just pastes your message in chat)");
-					ImGui::TextWrapped("(Leave this blank if you don't want a custom message)");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(700.0f);
-					ImGui::InputText("##CustomText", CustomTextChar, sizeof(CustomTextChar));
-
-					ImGui::TextWrapped("Custom Key to Open Chat (Must disable Force-override):");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(30.0f);
-					if (ImGui::InputText("##Chatkey", ChatKeyChar, sizeof(ChatKeyChar), ImGuiInputTextFlags_CharsNoBlank)) {
-						if (strlen(ChatKeyChar) > 1) {
-							ChatKeyChar[1] = '\0';
-						}
-						vk_chatkey = ChatKeyCharToVK(ChatKeyChar);
-					}
-
-					ImGui::SetNextItemWidth(150.0f);
-					if (ImGui::BeginCombo("Select Emote", optionsforoffset[selected_dropdown])) {
-						for (int i = 0; i < IM_ARRAYSIZE(optionsforoffset); i++) {
-							bool is_selected = (selected_dropdown == i);
-							if (ImGui::Selectable(optionsforoffset[i], is_selected)) {
-								selected_dropdown = i;  // Update the selected option
-								text = optionsforoffset[selected_dropdown];
-							}
-							if (is_selected) {
-								ImGui::SetItemDefaultFocus();  // Ensure the selected item has focus
-							}
-						}
-						ImGui::EndCombo();
-					}
-					ImGui::Checkbox("Let the macro Keep the item equipped", &unequiptoggle);
-					ImGui::Separator();
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped("R6 ONLY!");
-					ImGui::TextWrapped("HAVE THE ITEM UNEQUIPPED BEFORE DOING THIS!!!");
-					ImGui::TextWrapped("Automatically performs a weaker version of the /e dance2 equip speedglitch, however, it unequips your gear. "
-										"Unequipping your gear will make HHJ's feel easier to perform, will keep COM after gear deletion, "
-										"AND, speedglitching while in this state will move you PERFECTLY forwards, no side movement.");
-				}
-
-				if (selected_section == 5) { // Presskey / Press a Key
-					ImGui::TextWrapped("Key to Press:");
-					ImGui::SameLine();
-					if (ImGui::Button((KeyButtonTextalt + "##").c_str())) {
-						notbinding = false;
-						bindingModealt = true;
-						KeyButtonTextalt = "Press a Key...";
-						}
-					ImGui::SameLine();
-					vk_dkey = BindKeyModeAlt(vk_dkey);
-					ImGui::SetNextItemWidth(150.0f);
-					GetKeyNameFromHexAlt(vk_dkey);
-					ImGui::InputText("Key to Press", KeyBufferhumanalt, sizeof(KeyBufferhumanalt), ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_ReadOnly);
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(50.0f);
-					ImGui::PushID("Press2");
-					ImGui::InputText("Key to Press", KeyBufferalt, sizeof(KeyBufferalt), ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CharsHexadecimal);
-					ImGui::PopID();
-					ImGui::NewLine();
-					ImGui::SameLine(276);
-					ImGui::Text("(Human-Readable)");
-					ImGui::SameLine(510);
-					ImGui::Text("(Hexadecimal)");
-					ImGui::Separator();
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped("It will press the second keybind for a single frame whenever you press the first keybind. "
-										"This is most commonly used for micro-adjustments while moving, especially if you do this while jumping.");
-				}
-
-				if (selected_section == 6) { // Wallhop
-					ImGui::TextWrapped("Flick Degrees:");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(70.0f);
-					snprintf(WallhopDegrees, sizeof(WallhopDegrees), "%d", static_cast<int>(std::atof(WallhopPixels) * std::atof(RobloxSensValue)));
-					
-					ImGui::InputText("##WallhopDegrees", WallhopDegrees, sizeof(WallhopDegrees), ImGuiInputTextFlags_ReadOnly);
-
-					ImGui::TextWrapped("Flick Pixel Amount:");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(70.0f);
-					if (ImGui::InputText("##WallhopPixels", WallhopPixels, sizeof(WallhopPixels), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-						try {
-							wallhop_dx = std::round(std::stoi(WallhopPixels));
-							wallhop_dy = -std::round(std::stoi(WallhopPixels));
-						} catch (const std::invalid_argument &e) {
-						} catch (const std::out_of_range &e) {
-						}
-					}
-					ImGui::SameLine();
-					ImGui::TextWrapped("(Modify this one)");
-
-					ImGui::TextWrapped("Wallhop Length (ms):");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(70.0f);
-					if (ImGui::InputText("###", WallhopDelayChar, sizeof(WallhopDelayChar), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-						try {
-							WallhopDelay = std::round(std::stoi(WallhopDelayChar));
-						} catch (const std::invalid_argument &e) {
-						} catch (const std::out_of_range &e) {
-						}
-					}
-
-					ImGui::Checkbox("Switch to Left-Flick Wallhop", &wallhopswitch); // Left Sided wallhop switch
-					ImGui::Checkbox("Jump During Wallhop", &toggle_jump);
-					ImGui::Checkbox("Flick-Back During Wallhop", &toggle_flick);
-					ImGui::Checkbox("Auto flick direction", &autoflickdir);
-
-					ImGui::Separator();
-					ImGui::TextWrapped("IMPORTANT:");
-					ImGui::TextWrapped("THE ANGLE THAT YOU TURN IS DIRECTLY RELATED TO YOUR ROBLOX SENSITIVITY. "
-										"If you want to pick a SPECIFIC ANGLE, heres how. "
-										"For games without the cam-fix module, 180 degrees is equal to 360 divided by your Roblox Sensitivity. "
-										"For games with the cam-fix module, 180 degrees is equal to 500 divided by your Roblox Sensitivity. "
-										"Ex: 0.6 sens with no cam fix = 600 pixels, which means 600 / 4 (150) is equal to a 45 degree turn.");
-					ImGui::TextWrapped("INTEGERS ONLY!");
-					ImGui::Separator();
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped("This Macro automatically flicks your screen AND jumps at the same time, performing a wallhop.");
-				}
-
-				if (selected_section == 7) { // Walless LHJ
-					ImGui::Checkbox("Switch to Left-Sided LHJ", &wallesslhjswitch); // Left Sided lhj switch
-					ImGui::Separator();
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped("If you offset your center of mass to any direction EXCEPT directly upwards, you will be able to perform "
-										"14 stud jumps using this macro. However, you need at LEAST one FULL FOOT on the platform "
-										"in order to do it.");
-				}
-
-				if (selected_section == 8) { // Item Clip
-					ImGui::TextWrapped("Item Clip Slot:");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(30.0f);
-
-					if (ImGui::InputText("##ItemClipSlot", ItemClipSlot, sizeof(ItemClipSlot), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-						try {
-							clip_slot = std::stoi(ItemClipSlot);
-						} catch (const std::invalid_argument &e) {
-						} catch (const std::out_of_range &e) {
-						}
-					}
-
-					ImGui::TextWrapped("Item Clip Delay in Milliseconds (Default 34ms):");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(120.0f);
-					if (ImGui::InputText("##ItemClipDelay", ItemClipDelay, sizeof(ItemClipDelay), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-						try {
-							clip_delay = std::stoi(ItemClipDelay);
-						} catch (const std::invalid_argument &e) {
-						} catch (const std::out_of_range &e) {
-						}
-					}
-
-					ImGui::Checkbox("Switch from Toggle Key to Hold Key", &isitemclipswitch);
-
-					ImGui::Separator();
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped("This macro will equip and unequip your item in the amount of milliseconds you put in. "
-										"It's recommended to shiftlock, jump, and hold W while staying at the wall. "
-										"This lets you clip through walls in both R6 and R15, however, it is EXTREMELY RNG. "
-										"There are way too factors that control this, the delay, fps, the item's size, your animation, etc. "
-										"The item in the best scenario should be big and stretch far into the wall. ");
-					ImGui::TextWrapped("Also, for convenience sake, you cannot activate item clip unless you're tabbed into roblox.");
-				}
-
-				if (selected_section == 9) { // Laugh Clip
-					ImGui::Checkbox("Disable S being pressed (Slightly weaker laugh clips, but interferes with movement less)", &laughmoveswitch);
-					ImGui::Separator();
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped("MUST BE ABOVE 60 FPS AND IN R6!");
-					ImGui::TextWrapped("Go against a wall unshiftlocked and angle your camera DIRECTLY OPPOSITE TO THE WALL. "
-										"The Macro will Automatically type out /e laugh using the settings inside of the \"Unequip Com\" section. "
-										"It will automatically time your shiftlock and jump to laugh clip through up to ~1.3 studs.");
-				}
-
-				if (selected_section == 10) { // Wall-Walk
-
-					float CurrentWallWalkValue = atof(RobloxSensValue);
-					float CurrentWallwalkSide = camfixtoggle;
-
-
-					if (CurrentWallWalkValue != PreviousWallWalkValue) {
-						if (camfixtoggle) {
-							wallwalk_strengthx = static_cast<int>(round((500.0f / CurrentWallWalkValue) * 0.13f));
-							wallwalk_strengthy = -static_cast<int>(round((500.0f / CurrentWallWalkValue) * 0.13f));
-						} else {
-							wallwalk_strengthx = static_cast<int>(round((360.0f / CurrentWallWalkValue) * 0.13f));
-							wallwalk_strengthy = -static_cast<int>(round((360.0f / CurrentWallWalkValue) * 0.13f));
-						}
-					}
-
-					PreviousWallWalkValue = CurrentWallWalkValue;
-					sprintf(RobloxWallWalkValueChar, "%d", wallwalk_strengthx);
-
-					ImGui::TextWrapped("Wall-Walk Pixel Value BASED ON SENSITIVITY (meant to be low):");
-					ImGui::SetNextItemWidth(90.0f);
-					ImGui::SameLine();
-					ImGui::InputText("##PixelValue", RobloxWallWalkValueChar, sizeof(RobloxWallWalkValueChar), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-
-					ImGui::Checkbox("Switch to Left-Flick Wallwalk", &wallwalktoggleside);
-
-					ImGui::SetNextItemWidth(100.0f);
-					ImGui::InputText("Delay Between Flicks (Don't change from 72720 unless neccessary):", RobloxWallWalkValueDelayChar, sizeof(RobloxWallWalkValueDelayChar), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-
-					try {
-						RobloxWallWalkValueDelay = atof(RobloxWallWalkValueDelayChar);
-					} catch (const std::invalid_argument &e) {
-					} catch (const std::out_of_range &e) {
-					}
-
-					try { // Error Handling
-						wallwalk_strengthx = std::stoi(RobloxWallWalkValueChar);
-						wallwalk_strengthy = -std::stoi(RobloxWallWalkValueChar);
-					} catch (const std::invalid_argument &e) {
-					} catch (const std::out_of_range &e) {
-					}
-
-					ImGui::Checkbox("Switch from Toggle Key to Hold Key", &iswallwalkswitch);
-					ImGui::Separator();
-					ImGui::TextWrapped("IMPORTANT: FOR MOST OPTIMAL RESULTS, INPUT YOUR ROBLOX INGAME SENSITIVITY!");
-					ImGui::TextWrapped("THE HIGHER FPS YOU ARE, THE MORE STABLE IT GETS, HOWEVER 60 FPS IS ENOUGH FOR INFINITE DISTANCE");
-					ImGui::TextWrapped("TICK OR UNTICK THE CHECKBOX DEPENDING ON WHETHER THE GAME USES CAM-FIX MODULE OR NOT. "
-										"If you don't know, do BOTH and check which one provides you with a 180 degree rotation. "
-										"You can also toggle whether it's right facing or left facing (Makes its respective side easier) "
-										"Also, for convenience sake, you cannot activate speedglitch unless you're tabbed into roblox.");
-					ImGui::Separator();
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped("This macro abuses the way leg raycast physics work to permanently keep wallhopping, without jumping "
-										"you can walk up to a wall, maybe at a bit of an angle, and hold W and D or A to slowly walk across.");
-			}
-
-				if (selected_section == 11) { // Spamkey
-					ImGui::TextWrapped("Key to Press:");
-					ImGui::SameLine();
-					if (ImGui::Button((KeyButtonTextalt + "##").c_str())) {
-						bindingModealt = true;
-						notbinding = false;
-						KeyButtonTextalt = "Press a Key...";
-					}
-					ImGui::SameLine();
-					vk_spamkey = BindKeyModeAlt(vk_spamkey);
-					ImGui::SetNextItemWidth(150.0f);
-					GetKeyNameFromHexAlt(vk_spamkey);
-					ImGui::InputText("Key to Press", KeyBufferhumanalt, sizeof(KeyBufferhumanalt), ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_ReadOnly);
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(50.0f);
-					ImGui::PushID("Press2");
-					ImGui::InputText("Key to Press", KeyBufferalt, sizeof(KeyBufferalt), ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CharsHexadecimal);
-					ImGui::PopID();
-					ImGui::NewLine();
-					ImGui::SameLine(276);
-					ImGui::Text("(Human-Readable)");
-					ImGui::SameLine(510);
-					ImGui::Text("(Hexadecimal)");
-					ImGui::TextWrapped("Spam Delay (Milliseconds):");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(120.0f);
-					if (ImGui::InputText("##SpamDelay", SpamDelay, sizeof(SpamDelay), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-						try {
-						spam_delay = std::stof(SpamDelay);
-						real_delay = static_cast<int>((spam_delay + 0.5f) / 2);
-						} catch (const std::invalid_argument &e) {
-						} catch (const std::out_of_range &e) {
-						}
-					}
-
-					ImGui::TextWrapped("I do not take any responsibility if you set the delay to 0ms");
-					ImGui::Checkbox("Switch from Toggle Key to Hold Key", &isspamswitch);
-					ImGui::Separator();
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped("This macro will spam the second key with a millisecond delay. "
-										"This can be used as an autoclicker for any games you want, or a key-spam.");
-				}
-
-				if (selected_section == 12) { // Ledge Bounce
-					ImGui::Checkbox("Switch Ledge Bounce to Left-Sided", &bouncesidetoggle);
-					ImGui::Checkbox("Stay Horizontal After Bounce", &bouncerealignsideways);
-					ImGui::Checkbox("Automatically Hold Movement Keys", &bounceautohold);
-					ImGui::Separator();
-					ImGui::TextWrapped("IMPORTANT:");
-					ImGui::TextWrapped("PLEASE SET YOUR ROBLOX SENS AND CAM-FIX CORRECTLY SO IT CAN ACTUALLY DO THE PROPER TURNS!");
-					ImGui::TextWrapped("Also, if you set it to automatically hold movement keys, PLEASE HOLD THE KEY YOURSELF AS WELL, else it will keep moving forever.");
-					ImGui::Separator();
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped(
-									"Walk up to a ledge with your camera sideways, about half of your left foot should be on the platform. "
-									"The Macro will Automatically flick your camera 90 degrees, let you fall, and then flick back. "
-									"This will boost you up slightly into the air, and you can even jump after it.");
-				}
-
-				if (selected_section == 13) { // Bunnyhop
-					ImGui::TextWrapped("Custom Key to Open Chat (Must disable Force-override):");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(30.0f);
-					if (ImGui::InputText("##Chatkey", ChatKeyChar, sizeof(ChatKeyChar), ImGuiInputTextFlags_CharsNoBlank)) {
-						if (strlen(ChatKeyChar) > 1) {
-							ChatKeyChar[1] = '\0';
-						}
-						vk_chatkey = ChatKeyCharToVK(ChatKeyChar);
-					}
-
-					ImGui::TextWrapped("Bunnyhop Delay in Milliseconds (Default 10ms):");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(120.0f);
-					if (ImGui::InputText("##BunnyhopDelay", BunnyHopDelayChar, sizeof(BunnyHopDelayChar), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-						try {
-							BunnyHopDelay = atof(BunnyHopDelayChar);
-						} catch (const std::invalid_argument &e) {
-						} catch (const std::out_of_range &e) {
-						}
-					}
-
-					ImGui::Checkbox("Enable Intelligent Auto-Toggle", &bunnyhopsmart);
-
-					ImGui::Separator();
-					ImGui::TextWrapped("If Intelligent Auto-Toggle is on, pressing your chat key will temporarily disable bhop "
-									   "until you press left click or enter to leave the chat.");
-					ImGui::Separator();
-
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped(
-									"This Macro will automatically spam your key (typically space) with a specified delay whenever space is held down. "
-									"This is created as a more functional Spamkey implementation specifically for Bhop/Bunnyhop.");
-
-					ImGui::TextWrapped("This will not be active unless you are currently inside of the target program.");
-				}
-
-				////////////////////////// 
-				// Lag
-				if (selected_section == 14) { 
-					ImGui::SetNextItemWidth(60.0f);
-					ImGui::InputFloat("##LagFloat", &maxlagtime, 0.0f, 0.0f, "%.2f");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(300.0f);
-					ImGui::SliderFloat("##LagSlider", &maxlagtime, 0.0f, 9.8f, "%.2f Seconds");
-
-					char maxlagoverrideBuffer[16];
-					std::snprintf(maxlagoverrideBuffer, sizeof(maxlagoverrideBuffer), "%d", maxlagoverride);
-
-					ImGui::SetNextItemWidth(50.0f);
-					if (ImGui::InputText("Modify 50ms Default Unlag Time (MS)", maxlagoverrideBuffer, sizeof(maxlagoverrideBuffer), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-						maxlagoverride = std::atoi(maxlagoverrideBuffer);
-					}
-
-					ImGui::Checkbox("Switch from Hold Key to Toggle Key", &islagswitch);
-					ImGui::Separator();
-					ImGui::Checkbox("Overlay", &lagoverlayswitch);
-					char maxhorisontaloverrideBuffer[16];
-					std::snprintf(maxhorisontaloverrideBuffer, sizeof(maxhorisontaloverrideBuffer), "%d", ovarlayhorisontaloffset);
-
-					ImGui::SetNextItemWidth(50.0f);
-					if (ImGui::InputText("Modify Horizontal Offset##hor", maxhorisontaloverrideBuffer, sizeof(maxhorisontaloverrideBuffer), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-						ovarlayhorisontaloffset = std::atoi(maxhorisontaloverrideBuffer);
-					}
-					char maxverticaloverrideBuffer[16];
-					std::snprintf(maxverticaloverrideBuffer, sizeof(maxverticaloverrideBuffer), "%d", ovarlayverticaloffset);
-
-					ImGui::SetNextItemWidth(50.0f);
-					if (ImGui::InputText("Modify Vertical Offset##vert", maxverticaloverrideBuffer, sizeof(maxverticaloverrideBuffer), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-						ovarlayverticaloffset = std::atoi(maxverticaloverrideBuffer);
-					}
-					char maxsizeoverrideBuffer[16];
-					std::snprintf(maxsizeoverrideBuffer, sizeof(maxsizeoverrideBuffer), "%d", g_textSize);
-
-					ImGui::SetNextItemWidth(50.0f);
-					if (ImGui::InputText("Modify Text Size##size", maxsizeoverrideBuffer, sizeof(maxsizeoverrideBuffer), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-						g_textSize = std::atoi(maxsizeoverrideBuffer);
-					}
-					ImGui::Separator();
-
-					ImGui::TextWrapped("Explanation:");
-					ImGui::NewLine();
-					ImGui::TextWrapped("This will turn off the wifi for roblox");
-					ImGui::NewLine();
-					ImGui::TextWrapped("This can be used to reset COM");
-
-				}
-				////////////////////////// 
-
-            } else {
-                ImGui::TextWrapped("Select a section to see its settings.");
+            // Main content area
+            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 8);
+
+            // Two-column layout
+            float left_panel_width = display_size.x * 0.35f - 16;
+            float right_panel_width = display_size.x - left_panel_width - 43;
+
+            // Left panel - Macro list
+            ImGui::BeginChild("MacroList", ImVec2(left_panel_width, display_size.y - 320), true);
+
+            ImGui::PushFont(mainfont);
+            ImGui::TextColored(current_theme.accent_primary, "MACROS");
+            ImGui::PopFont();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // Macro buttons with modern styling
+            for (size_t display_index = 0; display_index < section_amounts; ++display_index) {
+                int i = section_order[display_index];
+
+                ImGui::PushID(i);
+
+                // Button styling based on state
+                if (section_toggles[i]) {
+                    ImGui::PushStyleColor(ImGuiCol_Button, current_theme.accent_primary);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, current_theme.accent_secondary);
+                } else {
+                    ImGui::PushStyleColor(ImGuiCol_Button, current_theme.bg_light);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(current_theme.bg_light.x + 0.05f, current_theme.bg_light.y + 0.05f, current_theme.bg_light.z + 0.05f, 1.0f));
+                }
+
+                // Calculate button size with proper text fitting
+                float buttonWidth = left_panel_width * 0.85f; // Reduce width to 85% of panel
+                float padding = 8.0f; // Reduced padding from 16.0f to 8.0f
+                float availableWidth = buttonWidth - (padding * 2);
+
+                // Calculate text sizes with wrapping
+                ImVec2 titleSize = ImGui::CalcTextSize(sections[i].title.c_str());
+                ImVec2 descSize = ImGui::CalcTextSize(sections[i].description.c_str());
+
+                // Check if text needs wrapping
+                std::string wrappedTitle = sections[i].title;
+                std::string wrappedDesc = sections[i].description;
+
+                if (titleSize.x > availableWidth) {
+                    // Wrap title text
+                    wrappedTitle = "";
+                    std::string currentLine = "";
+                    std::istringstream iss(sections[i].title);
+                    std::string word;
+                    while (iss >> word) {
+                        std::string testLine = currentLine + (currentLine.empty() ? "" : " ") + word;
+                        ImVec2 testSize = ImGui::CalcTextSize(testLine.c_str());
+                        if (testSize.x > availableWidth && !currentLine.empty()) {
+                            wrappedTitle += currentLine + "\n";
+                            currentLine = word;
+                        } else {
+                            currentLine = testLine;
+                        }
+                    }
+                    wrappedTitle += currentLine;
+                    titleSize = ImGui::CalcTextSize(wrappedTitle.c_str());
+                }
+
+                if (descSize.x > availableWidth) {
+                    // Wrap description text
+                    wrappedDesc = "";
+                    std::string currentLine = "";
+                    std::istringstream iss(sections[i].description);
+                    std::string word;
+                    while (iss >> word) {
+                        std::string testLine = currentLine + (currentLine.empty() ? "" : " ") + word;
+                        ImVec2 testSize = ImGui::CalcTextSize(testLine.c_str());
+                        if (testSize.x > availableWidth && !currentLine.empty()) {
+                            wrappedDesc += currentLine + "\n";
+                            currentLine = word;
+                        } else {
+                            currentLine = testLine;
+                        }
+                    }
+                    wrappedDesc += currentLine;
+                    descSize = ImGui::CalcTextSize(wrappedDesc.c_str());
+                }
+
+                // Calculate total button height - reduced spacing
+                float buttonHeight = titleSize.y + descSize.y + padding * 2 + 4; // Reduced spacing from 8 to 4
+
+                if (ImGui::Button("", ImVec2(buttonWidth, buttonHeight))) {
+                    selected_section = i;
+                }
+
+                // Drag and drop
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+                    ImGui::SetDragDropPayload("DND_SECTION", &display_index, sizeof(int));
+                    ImGui::EndDragDropSource();
+                }
+
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_SECTION")) {
+                        int payload_index = *(const int *)payload->Data;
+                        std::swap(section_order[payload_index], section_order[display_index]);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // Custom text rendering with proper positioning
+                ImVec2 buttonPos = ImGui::GetItemRectMin();
+                ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+                // Render title
+                ImVec2 titlePos = ImVec2(buttonPos.x + padding, buttonPos.y + padding);
+                drawList->AddText(titlePos, IM_COL32(255, 255, 255, 255), wrappedTitle.c_str());
+
+                // Render description - reduced spacing
+                ImVec2 descPos = ImVec2(buttonPos.x + padding, titlePos.y + titleSize.y + 2); // Reduced from 8 to 2
+                drawList->AddText(descPos, IM_COL32(200, 200, 200, 200), wrappedDesc.c_str());
+
+                ImGui::PopStyleColor(2);
+                ImGui::PopID();
+
+                ImGui::Spacing();
+                ImGui::Spacing(); // Reduced from multiple ImGui::Spacing() calls to just one
             }
 
+            ImGui::EndChild();
 
-			ImVec2 windowSize = ImGui::GetWindowSize();
-			float scrollY = ImGui::GetScrollY();
+            // Right panel - Settings
+            ImGui::SameLine();
+            ImGui::BeginChild("SettingsPanel", ImVec2(right_panel_width, display_size.y - 320), true);
 
-			ImVec2 fixedPos = ImVec2(
-				windowSize.x - 625.0f,
-				windowSize.y - 36.0f + scrollY
-			);
+            if (selected_section >= 0 && selected_section < sections.size()) {
+                // Section header
+                ImGui::PushFont(mainfont);
+                ImGui::TextColored(current_theme.accent_primary, "%s", sections[selected_section].title.c_str());
+                ImGui::PopFont();
+                ImGui::TextColored(current_theme.text_secondary, "%s", sections[selected_section].description.c_str());
+                ImGui::Separator();
+                ImGui::Spacing();
 
-			// Move cursor to Bottom Controls
-			ImGui::SetCursorPos(fixedPos);
+                // Toggle for this section
+                ImGui::Checkbox("Enable This Macro", &section_toggles[selected_section]);
+                ImGui::Spacing();
 
-			// Bottom Controls
-			ImGui::BeginGroup();
-			{
-				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Always On-Top");
-				ImGui::SameLine();
+                // Keybind section
+                ImGui::TextColored(current_theme.text_primary, "KEYBIND SETTINGS");
+                ImGui::Spacing();
 
-				if (ImGui::Checkbox("##OnTopToggle", &ontoptoggle))
-				{
-					SetWindowPos(hwnd, ontoptoggle ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE );
-				}
+                ImGui::Text("Primary Key:");
+                ImGui::SameLine();
 
-				ImGui::SameLine();
-				ImGui::Text("Opacity");
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(100.0f);
+                if (ImGui::Button(KeyButtonText.c_str(), ImVec2(155, 30))) {
+                    notbinding = false;
+                    bindingMode = true;
+                    KeyButtonText = "Press a Key...";
+                }
 
-				if (ImGui::SliderFloat("##OpacitySlider", &windowOpacityPercent, 20.0f, 100.0f, "%.0f%%"))
-				{
-					BYTE alpha = static_cast<BYTE>((windowOpacityPercent / 100.0f) * 255);
-					SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA);
-				}
-				ImGui::SameLine();
+                ImGui::SameLine();
 
-				ProfileUI::DrawProfileManagerUI();
-			}
-			ImGui::EndGroup();
+                // Handle key bindings
+                if (section_to_key.count(selected_section)) {
+                    unsigned int* key = section_to_key.at(selected_section);
+                    *key = BindKeyMode(*key);
+                    GetKeyNameFromHex(*key);
+                }
 
-            ImGui::EndChild(); // End right section
+                ImGui::SetNextItemWidth(150);
+                ImGui::InputText("##KeyName", KeyBufferhuman, sizeof(KeyBufferhuman), ImGuiInputTextFlags_ReadOnly);
 
-            // Finish the main window
-            ImGui::End(); // End main ImGui window
+                ImGui::SameLine();
+                ImGui::TextColored(current_theme.text_secondary, "(Human Readable)");
+
+                ImGui::SetNextItemWidth(80);
+                ImGui::InputText("##KeyHex", KeyBuffer, sizeof(KeyBuffer), ImGuiInputTextFlags_CharsNoBlank);
+
+                ImGui::SameLine();
+                ImGui::TextColored(current_theme.text_secondary, "(Hex)");
+
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::Spacing();
+
+                // Section-specific settings
+                ImGui::TextColored(current_theme.text_primary, "MACRO SETTINGS");
+                ImGui::Spacing();
+
+                // Render section-specific UI
+                RenderSectionSettings(selected_section);
+
+            } else {
+                ImGui::TextColored(current_theme.text_secondary, "Select a macro from the left panel to configure its settings.");
+            }
+
+            ImGui::EndChild();
+
+            ImGui::End();
+
+            // Render theme editor
+            RenderThemeEditor();
 
             // Render
             ImGui::Render();
@@ -3911,6 +3683,360 @@ static void RunGUI()
 
     UnregisterClass(wc.lpszClassName, wc.hInstance);
     AttachThreadInput(mainThreadId, guiThreadId, FALSE);
+}
+
+// Helper function to render section-specific settings
+static void RenderSectionSettings(int section) {
+    const Theme& current_theme = (current_theme_index < themes.size()) ? themes[current_theme_index] : custom_theme;
+
+    switch (section) {
+        case 0: // Freeze
+            ImGui::Text("Freeze Duration (seconds):");
+            ImGui::SetNextItemWidth(200);
+            ImGui::SliderFloat("##FreezeTime", &maxfreezetime, 0.0f, 9.8f, "%.2f s");
+
+            ImGui::Text("Unfreeze Override (ms):");
+            ImGui::SetNextItemWidth(200);
+            ImGui::InputInt("##FreezeOverride", &maxfreezeoverride);
+
+            ImGui::Spacing();
+            ImGui::Checkbox("Freeze Outside Roblox", &freezeoutsideroblox);
+            ImGui::Checkbox("Toggle Mode (instead of hold)", &isfreezeswitch);
+            ImGui::Checkbox("Freeze All Processes", &takeallprocessids);
+            ImGui::Separator();
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped("Hold the hotkey to freeze your game, let go of it to release it. Suspending your game also pauses "
+								"ALL network and physics activity that the server sends or recieves from you.");
+            break;
+
+        case 1: // Item Desync
+            ImGui::Text("Gear Slot:");
+            ImGui::SetNextItemWidth(100);
+            ImGui::InputText("##DesyncSlot", ItemDesyncSlot, sizeof(ItemDesyncSlot), ImGuiInputTextFlags_CharsDecimal);
+            try {
+                desync_slot = std::stoi(ItemDesyncSlot);
+            } catch (...) {}
+            ImGui::Separator();
+			ImGui::TextWrapped("Equip your item inside of the slot you have picked here, then hold the keybind for 4-7 seconds");
+			ImGui::Separator();
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped("This Macro rapidly sends number inputs to your roblox client, enough that the server begins to throttle "
+								"you. The item that you're holding must not make a serverside sound, else desyncing yourself will be "
+								"very buggy, and you will be unable to send any physics data to the server. Once you have desynced, "
+								"the server will assume you're not holding an item, but your client will, which permanently enables "
+								"client-side collision on the item.");
+			ImGui::Separator();
+			ImGui::TextWrapped(
+								"Also, for convenience sake, you cannot activate desync unless you're tabbed into roblox, You will "
+								"most likely crash any other program if you activate it in there.");
+            break;
+
+        case 2: // HHJ
+            ImGui::Checkbox("Auto Timing", &autotoggle);
+            ImGui::Checkbox("Fast Mode (Speedrunning)", &fasthhj);
+            ImGui::Separator();
+			ImGui::TextWrapped("IMPORTANT:");
+			ImGui::TextWrapped("FOR MOST OPTIMAL RESULTS PLEASE SET YOUR SENS AND CAM FIX ABOVE!");
+			ImGui::Separator();
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped("This macro abuses Roblox's conversion from angular velocity to regular velocity. If you put your "
+								"back against a wall, rotate left 20-30 degrees, turn around 180 degrees, hold jump, and press W "
+								"as you land on the floor, then, activate the macro, and let go of W, if you did it correctly, "
+								"you will rotate into the wall, and get your feet stuck inside of it, the macro freezes the game "
+								"during this process, and you will be catapulted up DEPENDANT ON YOUR CENTER OF MASS OFFSET "
+								"Bigger COM offset = Easier to perform and higher height");
+            break;
+
+        case 3: // Speedglitch
+            ImGui::Text("Pixel Value (180� turn):");
+            ImGui::SetNextItemWidth(150);
+            ImGui::InputText("##SpeedPixels", RobloxPixelValueChar, sizeof(RobloxPixelValueChar), ImGuiInputTextFlags_CharsDecimal);
+            try {
+                speed_strengthx = std::stoi(RobloxPixelValueChar);
+                speed_strengthy = -std::stoi(RobloxPixelValueChar);
+            } catch (...) {}
+
+            ImGui::Spacing();
+            ImGui::Checkbox("Hold Mode", &isspeedswitch);
+            ImGui::Separator();
+			ImGui::TextWrapped("IMPORTANT: FOR MOST OPTIMAL RESULTS, INPUT YOUR ROBLOX INGAME SENSITIVITY!");
+			ImGui::TextWrapped("FPS DOES AFFECT IT, HOWEVER, IT SHOULD WORK ON ALL!");
+			ImGui::TextWrapped("TICK OR UNTICK THE CHECKBOX DEPENDING ON WHETHER THE GAME USES CAM-FIX MODULE OR NOT. "
+								"If you don't know, do BOTH and check which one provides you with a 180 degree rotation. "
+								"Also, for convenience sake, you cannot activate speedglitch unless you're tabbed into roblox.");
+			ImGui::Separator();
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped("This macro uses the way a changed center of mass affects your movement. If you offset your COM "
+								"in any way, and then toggle the macro, you will rotate 180 degrees every frame, holding W and "
+								"jump during this will catapult you forward.");
+            break;
+
+        case 4: // Gear Unequip
+            ImGui::Text("Gear Slot:");
+            ImGui::SetNextItemWidth(100);
+            ImGui::InputText("##SpeedSlot", ItemSpeedSlot, sizeof(ItemSpeedSlot), ImGuiInputTextFlags_CharsDecimal);
+            try {
+                speed_slot = std::stoi(ItemSpeedSlot);
+            } catch (...) {}
+
+            ImGui::Text("Custom Chat Message:");
+            ImGui::SetNextItemWidth(300);
+            ImGui::InputText("##CustomText", CustomTextChar, sizeof(CustomTextChar));
+
+            ImGui::Text("Chat Key:");
+            ImGui::SetNextItemWidth(50);
+            ImGui::InputText("##ChatKey", ChatKeyChar, sizeof(ChatKeyChar), ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::Spacing();
+            ImGui::Checkbox("Keep Item Equipped", &unequiptoggle);
+            ImGui::Separator();
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped("R6 ONLY!");
+			ImGui::TextWrapped("HAVE THE ITEM UNEQUIPPED BEFORE DOING THIS!!!");
+			ImGui::TextWrapped("Automatically performs a weaker version of the /e dance2 equip speedglitch, however, it unequips your gear. "
+								"Unequipping your gear will make HHJ's feel easier to perform, will keep COM after gear deletion, "
+								"AND, speedglitching while in this state will move you PERFECTLY forwards, no side movement.");
+
+            break;
+
+        case 5: // Press Key
+            ImGui::Text("Secondary Key:");
+            ImGui::SameLine();
+            if (ImGui::Button((KeyButtonTextalt + "##").c_str(), ImVec2(120, 30))) {
+                notbinding = false;
+                bindingModealt = true;
+                KeyButtonTextalt = "Press a Key...";
+            }
+            ImGui::SameLine();
+            vk_dkey = BindKeyModeAlt(vk_dkey);
+            GetKeyNameFromHexAlt(vk_dkey);
+            ImGui::SetNextItemWidth(150);
+            ImGui::InputText("##SecondaryKey", KeyBufferhumanalt, sizeof(KeyBufferhumanalt), ImGuiInputTextFlags_ReadOnly);
+            ImGui::Separator();
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped("It will press the second keybind for a single frame whenever you press the first keybind. "
+								"This is most commonly used for micro-adjustments while moving, especially if you do this while jumping.");
+            break;
+
+        case 6: // Wallhop
+            ImGui::Text("Flick Pixels:");
+            ImGui::SetNextItemWidth(150);
+            ImGui::InputText("##WallhopPixels", WallhopPixels, sizeof(WallhopPixels), ImGuiInputTextFlags_CharsDecimal);
+            try {
+                wallhop_dx = std::round(std::stoi(WallhopPixels));
+                wallhop_dy = -std::round(std::stoi(WallhopPixels));
+            } catch (...) {}
+
+            ImGui::Spacing();
+            ImGui::Checkbox("Left-Flick Mode", &wallhopswitch);
+            ImGui::Checkbox("Auto Jump", &toggle_jump);
+            ImGui::Checkbox("Auto Flick-Back", &toggle_flick);
+            ImGui::Checkbox("Auto flick direction", &autoflickdir);
+            ImGui::Separator();
+			ImGui::TextWrapped("IMPORTANT:");
+			ImGui::TextWrapped("THE ANGLE THAT YOU TURN IS DIRECTLY RELATED TO YOUR ROBLOX SENSITIVITY. "
+								"If you want to pick a SPECIFIC ANGLE, heres how. "
+								"For games without the cam-fix module, 180 degrees is equal to 360 divided by your Roblox Sensitivity. "
+								"For games with the cam-fix module, 180 degrees is equal to 500 divided by your Roblox Sensitivity. "
+								"Ex: 0.6 sens with no cam fix = 600 pixels, which means 600 / 4 (150) is equal to a 45 degree turn.");
+			ImGui::TextWrapped("INTEGERS ONLY!");
+			ImGui::Separator();
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped("This Macro automatically flicks your screen AND jumps at the same time, performing a wallhop.");
+            break;
+
+        case 7: // Walless LHJ
+            ImGui::Checkbox("Left-Sided LHJ", &wallesslhjswitch);
+            ImGui::Separator();
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped("If you offset your center of mass to any direction EXCEPT directly upwards, you will be able to perform "
+								"14 stud jumps using this macro. However, you need at LEAST one FULL FOOT on the platform "
+								"in order to do it.");
+            break;
+
+        case 8: // Item Clip
+            ImGui::Text("Item Slot:");
+            ImGui::SetNextItemWidth(100);
+            ImGui::InputText("##ClipSlot", ItemClipSlot, sizeof(ItemClipSlot), ImGuiInputTextFlags_CharsDecimal);
+            try {
+                clip_slot = std::stoi(ItemClipSlot);
+            } catch (...) {}
+
+            ImGui::Text("Clip Delay (ms):");
+            ImGui::SetNextItemWidth(150);
+            ImGui::InputText("##ClipDelay", ItemClipDelay, sizeof(ItemClipDelay), ImGuiInputTextFlags_CharsDecimal);
+            try {
+                clip_delay = std::stoi(ItemClipDelay);
+            } catch (...) {}
+
+            ImGui::Spacing();
+            ImGui::Checkbox("Hold Mode", &isitemclipswitch);
+            ImGui::Separator();
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped("This macro will equip and unequip your item in the amount of milliseconds you put in. "
+								"It's recommended to shiftlock, jump, and hold W while staying at the wall. "
+								"This lets you clip through walls in both R6 and R15, however, it is EXTREMELY RNG. "
+								"There are way too factors that control this, the delay, fps, the item's size, your animation, etc. "
+								"The item in the best scenario should be big and stretch far into the wall. ");
+			ImGui::TextWrapped("Also, for convenience sake, you cannot activate item clip unless you're tabbed into roblox.");
+            break;
+
+        case 9: // Laugh Clip
+            ImGui::Checkbox("Disable S Key (Weaker but less intrusive)", &laughmoveswitch);
+            ImGui::Separator();
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped("MUST BE ABOVE 60 FPS AND IN R6!");
+			ImGui::TextWrapped("Go against a wall unshiftlocked and angle your camera DIRECTLY OPPOSITE TO THE WALL. "
+								"The Macro will Automatically type out /e laugh using the settings inside of the \"Unequip Com\" section. "
+								"It will automatically time your shiftlock and jump to laugh clip through up to ~1.3 studs.");
+            break;
+
+        case 10: // Wall-Walk
+            ImGui::Text("Wall-Walk Pixels:");
+            ImGui::SetNextItemWidth(150);
+            ImGui::InputText("##WallWalkPixels", RobloxWallWalkValueChar, sizeof(RobloxWallWalkValueChar), ImGuiInputTextFlags_CharsDecimal);
+            try {
+                wallwalk_strengthx = std::stoi(RobloxWallWalkValueChar);
+                wallwalk_strengthy = -std::stoi(RobloxWallWalkValueChar);
+            } catch (...) {}
+
+            ImGui::Text("Flick Delay (�s):");
+            ImGui::SetNextItemWidth(150);
+            ImGui::InputText("##WallWalkDelay", RobloxWallWalkValueDelayChar, sizeof(RobloxWallWalkValueDelayChar), ImGuiInputTextFlags_CharsDecimal);
+            try {
+                RobloxWallWalkValueDelay = atof(RobloxWallWalkValueDelayChar);
+            } catch (...) {}
+
+            ImGui::Spacing();
+            ImGui::Checkbox("Left-Flick Mode", &wallwalktoggleside);
+            ImGui::Checkbox("Hold Mode", &iswallwalkswitch);
+            ImGui::Separator();
+			ImGui::TextWrapped("IMPORTANT: FOR MOST OPTIMAL RESULTS, INPUT YOUR ROBLOX INGAME SENSITIVITY!");
+			ImGui::TextWrapped("THE HIGHER FPS YOU ARE, THE MORE STABLE IT GETS, HOWEVER 60 FPS IS ENOUGH FOR INFINITE DISTANCE");
+			ImGui::TextWrapped("TICK OR UNTICK THE CHECKBOX DEPENDING ON WHETHER THE GAME USES CAM-FIX MODULE OR NOT. "
+								"If you don't know, do BOTH and check which one provides you with a 180 degree rotation. "
+								"You can also toggle whether it's right facing or left facing (Makes its respective side easier) "
+								"Also, for convenience sake, you cannot activate speedglitch unless you're tabbed into roblox.");
+			ImGui::Separator();
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped("This macro abuses the way leg raycast physics work to permanently keep wallhopping, without jumping "
+								"you can walk up to a wall, maybe at a bit of an angle, and hold W and D or A to slowly walk across.");
+            break;
+
+        case 11: // Spam Key
+            ImGui::Text("Key to Spam:");
+            ImGui::SameLine();
+            if (ImGui::Button((KeyButtonTextalt + "##").c_str(), ImVec2(120, 30))) {
+                bindingModealt = true;
+                notbinding = false;
+                KeyButtonTextalt = "Press a Key...";
+            }
+            ImGui::SameLine();
+            vk_spamkey = BindKeyModeAlt(vk_spamkey);
+            GetKeyNameFromHexAlt(vk_spamkey);
+            ImGui::SetNextItemWidth(150);
+            ImGui::InputText("##SpamKey", KeyBufferhumanalt, sizeof(KeyBufferhumanalt), ImGuiInputTextFlags_ReadOnly);
+
+            ImGui::Text("Spam Delay (ms):");
+            ImGui::SetNextItemWidth(150);
+            ImGui::InputText("##SpamDelay", SpamDelay, sizeof(SpamDelay), ImGuiInputTextFlags_CharsDecimal);
+            try {
+                spam_delay = std::stof(SpamDelay);
+                real_delay = static_cast<int>((spam_delay * 1000.0f + 0.5f) / 2);
+            } catch (...) {}
+
+            ImGui::Spacing();
+            ImGui::Checkbox("Hold Mode", &isspamswitch);
+            ImGui::Separator();
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped("This macro will spam the second key with a millisecond delay. "
+								"This can be used as an autoclicker for any games you want, or a key-spam.");
+            break;
+
+        case 12: // Ledge Bounce
+            ImGui::Checkbox("Left-Sided Bounce", &bouncesidetoggle);
+            ImGui::Checkbox("Stay Horizontal After Bounce", &bouncerealignsideways);
+            ImGui::Checkbox("Auto Hold Movement", &bounceautohold);
+            ImGui::Separator();
+			ImGui::TextWrapped("IMPORTANT:");
+			ImGui::TextWrapped("PLEASE SET YOUR ROBLOX SENS AND CAM-FIX CORRECTLY SO IT CAN ACTUALLY DO THE PROPER TURNS!");
+			ImGui::TextWrapped("Also, if you set it to automatically hold movement keys, PLEASE HOLD THE KEY YOURSELF AS WELL, else it will keep moving forever.");
+			ImGui::Separator();
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped(
+							"Walk up to a ledge with your camera sideways, about half of your left foot should be on the platform. "
+							"The Macro will Automatically flick your camera 90 degrees, let you fall, and then flick back. "
+							"This will boost you up slightly into the air, and you can even jump after it.");
+            break;
+
+        case 13: // Bunnyhop
+            ImGui::Text("Bunnyhop Delay (ms):");
+            ImGui::SetNextItemWidth(150);
+            ImGui::InputText("##BhopDelay", BunnyHopDelayChar, sizeof(BunnyHopDelayChar), ImGuiInputTextFlags_CharsDecimal);
+            try {
+                BunnyHopDelay = atof(BunnyHopDelayChar);
+            } catch (...) {}
+
+            ImGui::Spacing();
+            ImGui::Checkbox("Smart Mode (Auto-disable in chat)", &bunnyhopsmart);
+            ImGui::Separator();
+			ImGui::TextWrapped("If Intelligent Auto-Toggle is on, pressing your chat key will temporarily disable bhop "
+								"until you press left click or enter to leave the chat.");
+			ImGui::Separator();
+
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped(
+							"This Macro will automatically spam your key (typically space) with a specified delay whenever space is held down. "
+							"This is created as a more functional Spamkey implementation specifically for Bhop/Bunnyhop.");
+
+			ImGui::TextWrapped("This will not be active unless you are currently inside of the target program.");
+            break;
+        case 14: // Lag
+            ImGui::SetNextItemWidth(60.0f);
+			ImGui::InputFloat("##LagFloat", &maxlagtime, 0.0f, 0.0f, "%.2f");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(300.0f);
+			ImGui::SliderFloat("##LagSlider", &maxlagtime, 0.0f, 9.8f, "%.2f Seconds");
+
+			ImGui::Text("Lag Override (ms):");
+			ImGui::SetNextItemWidth(200);
+			ImGui::InputInt("##LagOverride", &maxlagoverride);
+
+			ImGui::Checkbox("Switch from Hold Key to Toggle Key", &islagswitch);
+			ImGui::Separator();
+			ImGui::Checkbox("Overlay", &lagoverlayswitch);
+			ImGui::Text("Modify Horizontal Offset");
+			ImGui::SetNextItemWidth(200);
+			ImGui::InputInt("##horisontal", &ovarlayhorisontaloffset);
+			ImGui::Text("Modify Vertical Offset");
+			ImGui::SetNextItemWidth(200);
+			ImGui::InputInt("##vertical", &ovarlayverticaloffset);
+			ImGui::Text("Modify Text Size");
+			ImGui::SetNextItemWidth(200);
+			ImGui::InputInt("##size", &g_textSize);
+			ImGui::Separator();
+
+			ImGui::TextWrapped("Explanation:");
+			ImGui::NewLine();
+			ImGui::TextWrapped("This will turn off the wifi for roblox");
+			ImGui::NewLine();
+			ImGui::TextWrapped("This can be used to reset COM");
+            break;
+    }
 }
 
 
@@ -3976,7 +4102,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     if (!remoteVersion.empty()) 
     {
         remoteVersion = Trim(remoteVersion);
-        std::string localVersion = "3.0.0.1";
+        std::string localVersion = "3.0.0.2";
 
         if (remoteVersion != localVersion) 
         {
@@ -4529,6 +4655,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			if (g_overlay && lastLag != isLag) {
 				InvalidateRect(g_overlay, nullptr, TRUE);
+				UpdateWindow(g_overlay);
 
 			}
 
@@ -4675,4 +4802,162 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	exit(0);
 
 	return 0;
+}
+
+static void ApplyTheme(const Theme &theme)
+{
+	ImGuiStyle &style = ImGui::GetStyle();
+
+	// Apply modern styling
+	style.WindowPadding = ImVec2(16, 16);
+	style.FramePadding = ImVec2(8, 6);
+	style.ItemSpacing = ImVec2(12, 8);
+	style.ItemInnerSpacing = ImVec2(8, 6);
+	style.ScrollbarSize = 12;
+	style.GrabMinSize = 8;
+	style.WindowRounding = theme.window_rounding;
+	style.ChildRounding = theme.window_rounding * 0.75f;
+	style.FrameRounding = theme.frame_rounding;
+	style.PopupRounding = theme.window_rounding * 0.75f;
+	style.ScrollbarRounding = theme.frame_rounding;
+	style.GrabRounding = theme.button_rounding;
+	style.TabRounding = theme.frame_rounding;
+
+	// Colors
+	style.Colors[ImGuiCol_WindowBg] = theme.bg_dark;
+	style.Colors[ImGuiCol_ChildBg] = theme.bg_medium;
+	style.Colors[ImGuiCol_PopupBg] = theme.bg_medium;
+	style.Colors[ImGuiCol_Border] = theme.border_color;
+	style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	style.Colors[ImGuiCol_FrameBg] = theme.bg_light;
+	style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(
+		theme.bg_light.x + 0.05f, theme.bg_light.y + 0.05f, theme.bg_light.z + 0.05f, 1.0f);
+	style.Colors[ImGuiCol_FrameBgActive] = theme.accent_primary;
+	style.Colors[ImGuiCol_TitleBg] = theme.bg_dark;
+	style.Colors[ImGuiCol_TitleBgActive] = theme.bg_dark;
+	style.Colors[ImGuiCol_TitleBgCollapsed] = theme.bg_dark;
+	style.Colors[ImGuiCol_MenuBarBg] = theme.bg_medium;
+	style.Colors[ImGuiCol_ScrollbarBg] = theme.bg_medium;
+	style.Colors[ImGuiCol_ScrollbarGrab] = theme.accent_primary;
+	style.Colors[ImGuiCol_ScrollbarGrabHovered] = theme.accent_secondary;
+	style.Colors[ImGuiCol_ScrollbarGrabActive] = theme.accent_secondary;
+	style.Colors[ImGuiCol_CheckMark] = theme.accent_primary;
+	style.Colors[ImGuiCol_SliderGrab] = theme.accent_primary;
+	style.Colors[ImGuiCol_SliderGrabActive] = theme.accent_secondary;
+	style.Colors[ImGuiCol_Button] = theme.accent_primary;
+	style.Colors[ImGuiCol_ButtonHovered] = theme.accent_secondary;
+	style.Colors[ImGuiCol_ButtonActive] = theme.accent_secondary;
+	style.Colors[ImGuiCol_Header] = theme.accent_primary;
+	style.Colors[ImGuiCol_HeaderHovered] = theme.accent_secondary;
+	style.Colors[ImGuiCol_HeaderActive] = theme.accent_secondary;
+	style.Colors[ImGuiCol_Separator] = theme.border_color;
+	style.Colors[ImGuiCol_SeparatorHovered] = theme.accent_primary;
+	style.Colors[ImGuiCol_SeparatorActive] = theme.accent_secondary;
+	style.Colors[ImGuiCol_ResizeGrip] = theme.accent_primary;
+	style.Colors[ImGuiCol_ResizeGripHovered] = theme.accent_secondary;
+	style.Colors[ImGuiCol_ResizeGripActive] = theme.accent_secondary;
+	style.Colors[ImGuiCol_Tab] = theme.bg_light;
+	style.Colors[ImGuiCol_TabHovered] = theme.accent_primary;
+	style.Colors[ImGuiCol_TabActive] = theme.accent_primary;
+	style.Colors[ImGuiCol_TabUnfocused] = theme.bg_light;
+	style.Colors[ImGuiCol_TabUnfocusedActive] = theme.accent_primary;
+	style.Colors[ImGuiCol_Text] = theme.text_primary;
+	style.Colors[ImGuiCol_TextDisabled] = theme.text_secondary;
+	style.Colors[ImGuiCol_NavHighlight] = theme.accent_primary;
+	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.60f);
+}
+
+bool tempb = true;
+float tempf = 10.0f;
+
+// Theme editor UI
+static void RenderThemeEditor()
+{
+	if (!show_theme_editor)
+		return;
+	ImGui::SetNextWindowSize(ImVec2(600, 500), ImGuiCond_FirstUseEver);
+	if (ImGui::Begin("Theme Editor", &show_theme_editor, ImGuiWindowFlags_NoCollapse)) {
+		// Theme selector
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "SELECT THEME");
+		ImGui::Separator();
+		std::vector<const char *> theme_names;
+		for (const auto &theme : themes)
+			theme_names.push_back(theme.name.c_str());
+		theme_names.push_back("Custom Theme");
+		if (ImGui::Combo("Theme", &current_theme_index, theme_names.data(),
+				 theme_names.size()))
+			theme_modified = true;
+		ImGui::Spacing();
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "CUSTOMIZE COLORS");
+		ImGui::Separator();
+		Theme *editing_theme = (current_theme_index < themes.size())
+					       ? &themes[current_theme_index]
+					       : &custom_theme;
+		if (editing_theme) {
+			ImGui::BeginChild("ColorEditor", ImVec2(0, 300), true);
+			ImGui::Text("Background Colors");
+			ImGui::ColorEdit4("Dark Background", (float *)&editing_theme->bg_dark);
+			ImGui::ColorEdit4("Medium Background", (float *)&editing_theme->bg_medium);
+			ImGui::ColorEdit4("Light Background", (float *)&editing_theme->bg_light);
+			ImGui::Spacing();
+			ImGui::Text("Accent Colors");
+			ImGui::ColorEdit4("Primary Accent",
+					  (float *)&editing_theme->accent_primary);
+			ImGui::ColorEdit4("Secondary Accent",
+					  (float *)&editing_theme->accent_secondary);
+			ImGui::Spacing();
+			ImGui::Text("Text Colors");
+			ImGui::ColorEdit4("Primary Text", (float *)&editing_theme->text_primary);
+			ImGui::ColorEdit4("Secondary Text",
+					  (float *)&editing_theme->text_secondary);
+			ImGui::Spacing();
+			ImGui::Text("Status Colors");
+			ImGui::ColorEdit4("Success", (float *)&editing_theme->success_color);
+			ImGui::ColorEdit4("Warning", (float *)&editing_theme->warning_color);
+			ImGui::ColorEdit4("Error", (float *)&editing_theme->error_color);
+			ImGui::Spacing();
+			ImGui::Text("Border Color");
+			ImGui::ColorEdit4("Border", (float *)&editing_theme->border_color);
+			ImGui::EndChild();
+			ImGui::Spacing();
+			ImGui::Text("Rounding Settings");
+			ImGui::SliderFloat("Window Rounding", &editing_theme->window_rounding, 0.0f,
+					   20.0f, "%.1f");
+			ImGui::SliderFloat("Frame Rounding", &editing_theme->frame_rounding, 0.0f,
+					   20.0f, "%.1f");
+			ImGui::SliderFloat("Button Rounding", &editing_theme->button_rounding, 0.0f,
+					   20.0f, "%.1f");
+			ImGui::Spacing();
+			if (current_theme_index == themes.size()) {
+				ImGui::Text("Custom Theme Name");
+				static char theme_name[256];
+				strncpy(theme_name, editing_theme->name.c_str(),
+					sizeof(theme_name) - 1);
+				if (ImGui::InputText("##ThemeName", theme_name, sizeof(theme_name)))
+					editing_theme->name = theme_name;
+			}
+			ImGui::Spacing();
+			if (ImGui::Button("Reset to Default", ImVec2(150, 30))) {
+				if (current_theme_index < themes.size())
+					themes[current_theme_index] = defaultthemes[current_theme_index];
+				else
+					custom_theme = defaultthemes[0];
+				theme_modified = true;
+			}
+			ImGui::Spacing();
+			ImGui::Text("Preview");
+			ImGui::Separator();
+			ImGui::BeginChild("Preview", ImVec2(0, 135), true);
+			ApplyTheme(*editing_theme);
+			ImGui::Text("Sample Text");
+			ImGui::Button("Sample Button");
+			ImGui::SameLine();
+			
+			ImGui::Checkbox("Sample Checkbox", &tempb);
+			
+			ImGui::SliderFloat("Sample Slider", &tempf, 0.0f, 20.0f);
+			ImGui::EndChild();
+		}
+	}
+	ImGui::End();
 }
