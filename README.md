@@ -56,13 +56,6 @@ https://discord.gg/roblox-glitching-community-998572881892094012
 
 https://github.com/user-attachments/assets/a2c63feb-b947-4247-802c-34bf6cf8c2ce
 
-## Code Signing Policy
-
-This project uses free code signing provided by [SignPath.io](https://about.signpath.io/), with certificates issued by [SignPath Foundation](https://signpath.org/).
-
-| [<img src="https://avatars.githubusercontent.com/u/34448643?s=25&v=4" width="25">](https://about.signpath.io/) | Free code signing provided by [**SignPath.io**](https://about.signpath.io/), certificate by [**SignPath Foundation**](https://signpath.org/) |
-|----------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-
 ### Privacy Policy
 This application makes client-side HTTP requests solely for version checking and updates. No user data is collected or transmitted to any servers.
 
