@@ -1,7 +1,9 @@
+﻿#define NOMINMAX
+#include <windows.h>
+#include "resource.h"
+
 #include <iostream>
 #include <vector>
-#define NOMINMAX
-#include <windows.h>
 #include <processthreadsapi.h>
 #include <Psapi.h>
 #include <fcntl.h>
@@ -15,14 +17,19 @@
 #include <algorithm>  
 #include <tlhelp32.h>
 #include <d3d11.h>
+#include <shlwapi.h>
+#include <random>
+
 #include "imgui-files/imgui.h"
 #include "imgui-files/imgui_impl_dx11.h"
 #include "imgui-files/imgui_impl_win32.h"
 #include "imgui-files/json.hpp"
+
+#include "miniz.h"
+
 #include <wininet.h>
 #include <comdef.h>
 #include <shlobj.h>
-#include "resource.h"
 #include <condition_variable>
 #include <fstream>
 #include <filesystem>
@@ -36,117 +43,71 @@
 #include <dwmapi.h>
 #include <variant>
 #include <algorithm>
-#include <string>
-#include <limits>
+#include <shellscalingapi.h>
 
 // Library for HTTP (To get version data from my github page)
 #pragma comment(lib, "wininet.lib")
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "oleaut32.lib")
+#pragma comment(lib, "shlwapi.lib")
 #pragma comment(lib, "uuid.lib")
 #pragma comment(lib, "shell32.lib")
+#pragma comment(lib, "Shcore.lib")
 
 using json = nlohmann::json;
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-// Theme system
 struct Theme {
-    std::string name;
-    ImVec4 bg_dark;
-    ImVec4 bg_medium;
-    ImVec4 bg_light;
-    ImVec4 accent_primary;
-    ImVec4 accent_secondary;
-    ImVec4 text_primary;
-    ImVec4 text_secondary;
-    ImVec4 success_color;
-    ImVec4 warning_color;
-    ImVec4 error_color;
-    ImVec4 border_color;
-    float window_rounding;
-    float frame_rounding;
-    float button_rounding;
+	std::string name;
+	ImVec4 bg_dark;
+	ImVec4 bg_medium;
+	ImVec4 bg_light;
+	ImVec4 accent_primary;
+	ImVec4 accent_secondary;
+	ImVec4 text_primary;
+	ImVec4 text_secondary;
+	ImVec4 success_color;
+	ImVec4 warning_color;
+	ImVec4 error_color;
+	ImVec4 border_color;
+	float window_rounding;
+	float frame_rounding;
+	float button_rounding;
 };
 
 // Default themes
 std::vector<Theme> defaultthemes = {
-    {
-        "Modern Dark",
-        ImVec4(0.08f, 0.08f, 0.12f, 1.0f),
-        ImVec4(0.12f, 0.12f, 0.16f, 1.0f),
-        ImVec4(0.16f, 0.16f, 0.20f, 1.0f),
-        ImVec4(0.20f, 0.60f, 1.0f, 1.0f),
-        ImVec4(0.15f, 0.50f, 0.85f, 1.0f),
-        ImVec4(0.95f, 0.95f, 0.95f, 1.0f),
-        ImVec4(0.70f, 0.70f, 0.70f, 1.0f),
-        ImVec4(0.20f, 0.80f, 0.40f, 1.0f),
-        ImVec4(0.90f, 0.60f, 0.20f, 1.0f),
-        ImVec4(0.90f, 0.30f, 0.30f, 1.0f),
-        ImVec4(0.20f, 0.20f, 0.25f, 1.0f),
-        8.0f, 4.0f, 4.0f
-    },
-    {
-        "Cyberpunk",
-        ImVec4(0.05f, 0.05f, 0.10f, 1.0f),
-        ImVec4(0.10f, 0.10f, 0.15f, 1.0f),
-        ImVec4(0.15f, 0.15f, 0.20f, 1.0f),
-        ImVec4(0.00f, 0.80f, 1.0f, 1.0f),
-        ImVec4(0.00f, 0.60f, 0.80f, 1.0f),
-        ImVec4(0.90f, 0.90f, 1.0f, 1.0f),
-        ImVec4(0.60f, 0.60f, 0.80f, 1.0f),
-        ImVec4(0.00f, 1.0f, 0.50f, 1.0f),
-        ImVec4(1.0f, 0.50f, 0.00f, 1.0f),
-        ImVec4(1.0f, 0.20f, 0.40f, 1.0f),
-        ImVec4(0.00f, 0.40f, 0.60f, 1.0f),
-        6.0f, 3.0f, 3.0f
-    },
-    {
-        "Forest Green",
-        ImVec4(0.05f, 0.12f, 0.08f, 1.0f),
-        ImVec4(0.08f, 0.16f, 0.12f, 1.0f),
-        ImVec4(0.12f, 0.20f, 0.16f, 1.0f),
-        ImVec4(0.20f, 0.80f, 0.40f, 1.0f),
-        ImVec4(0.15f, 0.60f, 0.30f, 1.0f),
-        ImVec4(0.90f, 0.95f, 0.90f, 1.0f),
-        ImVec4(0.70f, 0.80f, 0.70f, 1.0f),
-        ImVec4(0.30f, 0.90f, 0.50f, 1.0f),
-        ImVec4(0.90f, 0.70f, 0.20f, 1.0f),
-        ImVec4(0.80f, 0.30f, 0.30f, 1.0f),
-        ImVec4(0.15f, 0.30f, 0.20f, 1.0f),
-        10.0f, 5.0f, 5.0f
-    },
-    {
-        "Sunset Orange",
-        ImVec4(0.12f, 0.08f, 0.05f, 1.0f),
-        ImVec4(0.16f, 0.12f, 0.08f, 1.0f),
-        ImVec4(0.20f, 0.16f, 0.12f, 1.0f),
-        ImVec4(1.0f, 0.50f, 0.20f, 1.0f),
-        ImVec4(0.80f, 0.40f, 0.15f, 1.0f),
-        ImVec4(1.0f, 0.95f, 0.90f, 1.0f),
-        ImVec4(0.80f, 0.70f, 0.60f, 1.0f),
-        ImVec4(0.40f, 0.80f, 0.30f, 1.0f),
-        ImVec4(1.0f, 0.70f, 0.20f, 1.0f),
-        ImVec4(0.90f, 0.30f, 0.30f, 1.0f),
-        ImVec4(0.30f, 0.20f, 0.15f, 1.0f),
-        12.0f, 6.0f, 6.0f
-    },
-    {
-        "Purple Haze",
-        ImVec4(0.10f, 0.05f, 0.15f, 1.0f),
-        ImVec4(0.15f, 0.10f, 0.20f, 1.0f),
-        ImVec4(0.20f, 0.15f, 0.25f, 1.0f),
-        ImVec4(0.80f, 0.40f, 1.0f, 1.0f),
-        ImVec4(0.60f, 0.30f, 0.80f, 1.0f),
-        ImVec4(0.95f, 0.90f, 1.0f, 1.0f),
-        ImVec4(0.70f, 0.60f, 0.80f, 1.0f),
-        ImVec4(0.40f, 0.80f, 0.60f, 1.0f),
-        ImVec4(1.0f, 0.60f, 0.40f, 1.0f),
-        ImVec4(0.90f, 0.30f, 0.50f, 1.0f),
-        ImVec4(0.25f, 0.15f, 0.30f, 1.0f),
-        8.0f, 4.0f, 4.0f
-    }
-};
+	{"Modern Dark", ImVec4(0.08f, 0.08f, 0.12f, 1.0f), ImVec4(0.12f, 0.12f, 0.16f, 1.0f),
+	 ImVec4(0.16f, 0.16f, 0.20f, 1.0f), ImVec4(0.20f, 0.60f, 1.0f, 1.0f),
+	 ImVec4(0.15f, 0.50f, 0.85f, 1.0f), ImVec4(0.95f, 0.95f, 0.95f, 1.0f),
+	 ImVec4(0.70f, 0.70f, 0.70f, 1.0f), ImVec4(0.20f, 0.80f, 0.40f, 1.0f),
+	 ImVec4(0.90f, 0.60f, 0.20f, 1.0f), ImVec4(0.90f, 0.30f, 0.30f, 1.0f),
+	 ImVec4(0.20f, 0.20f, 0.25f, 1.0f), 8.0f, 4.0f, 4.0f},
+	{"Cyberpunk", ImVec4(0.05f, 0.05f, 0.10f, 1.0f), ImVec4(0.10f, 0.10f, 0.15f, 1.0f),
+	 ImVec4(0.15f, 0.15f, 0.20f, 1.0f), ImVec4(0.00f, 0.80f, 1.0f, 1.0f),
+	 ImVec4(0.00f, 0.60f, 0.80f, 1.0f), ImVec4(0.90f, 0.90f, 1.0f, 1.0f),
+	 ImVec4(0.60f, 0.60f, 0.80f, 1.0f), ImVec4(0.00f, 1.0f, 0.50f, 1.0f),
+	 ImVec4(1.0f, 0.50f, 0.00f, 1.0f), ImVec4(1.0f, 0.20f, 0.40f, 1.0f),
+	 ImVec4(0.00f, 0.40f, 0.60f, 1.0f), 6.0f, 3.0f, 3.0f},
+	{"Forest Green", ImVec4(0.05f, 0.12f, 0.08f, 1.0f), ImVec4(0.08f, 0.16f, 0.12f, 1.0f),
+	 ImVec4(0.12f, 0.20f, 0.16f, 1.0f), ImVec4(0.20f, 0.80f, 0.40f, 1.0f),
+	 ImVec4(0.15f, 0.60f, 0.30f, 1.0f), ImVec4(0.90f, 0.95f, 0.90f, 1.0f),
+	 ImVec4(0.70f, 0.80f, 0.70f, 1.0f), ImVec4(0.30f, 0.90f, 0.50f, 1.0f),
+	 ImVec4(0.90f, 0.70f, 0.20f, 1.0f), ImVec4(0.80f, 0.30f, 0.30f, 1.0f),
+	 ImVec4(0.15f, 0.30f, 0.20f, 1.0f), 10.0f, 5.0f, 5.0f},
+	{"Sunset Orange", ImVec4(0.12f, 0.08f, 0.05f, 1.0f), ImVec4(0.16f, 0.12f, 0.08f, 1.0f),
+	 ImVec4(0.20f, 0.16f, 0.12f, 1.0f), ImVec4(1.0f, 0.50f, 0.20f, 1.0f),
+	 ImVec4(0.80f, 0.40f, 0.15f, 1.0f), ImVec4(1.0f, 0.95f, 0.90f, 1.0f),
+	 ImVec4(0.80f, 0.70f, 0.60f, 1.0f), ImVec4(0.40f, 0.80f, 0.30f, 1.0f),
+	 ImVec4(1.0f, 0.70f, 0.20f, 1.0f), ImVec4(0.90f, 0.30f, 0.30f, 1.0f),
+	 ImVec4(0.30f, 0.20f, 0.15f, 1.0f), 12.0f, 6.0f, 6.0f},
+	{"Purple Haze", ImVec4(0.10f, 0.05f, 0.15f, 1.0f), ImVec4(0.15f, 0.10f, 0.20f, 1.0f),
+	 ImVec4(0.20f, 0.15f, 0.25f, 1.0f), ImVec4(0.80f, 0.40f, 1.0f, 1.0f),
+	 ImVec4(0.60f, 0.30f, 0.80f, 1.0f), ImVec4(0.95f, 0.90f, 1.0f, 1.0f),
+	 ImVec4(0.70f, 0.60f, 0.80f, 1.0f), ImVec4(0.40f, 0.80f, 0.60f, 1.0f),
+	 ImVec4(1.0f, 0.60f, 0.40f, 1.0f), ImVec4(0.90f, 0.30f, 0.50f, 1.0f),
+	 ImVec4(0.25f, 0.15f, 0.30f, 1.0f), 8.0f, 4.0f, 4.0f}};
 
 std::vector<Theme> themes = defaultthemes;
 
@@ -172,7 +133,6 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static void RenderSectionSettings(int section);
 static void RenderThemeEditor();
 static void ApplyTheme(const Theme &theme);
-
 // TO PUT IN A KEYBOARD KEY, GO TO https://www.millisecond.com/support/docs/current/html/language/scancodes.htm
 // Convert the scancode into hexadecimal before putting it into the HoldKey or ReleaseKey functions
 // Ex: E = 18 = 0x12 = HoldKey(0x12)
@@ -190,6 +150,7 @@ std::atomic<bool> iswallwalkloop(false);
 std::atomic<bool> isbhoploop(false);
 std::atomic<bool> isafk(false);
 std::atomic<bool> iswallhopthread(false);
+std::atomic<bool> ispresskeythread(false);
 
 std::atomic<unsigned int> RobloxFPS(120);
 
@@ -233,13 +194,13 @@ unsigned int vk_bunnyhopkey = MapVirtualKey(0x39, MAPVK_VSC_TO_VK);
 unsigned int vk_Lagkey = VK_F2;
 ////////////////////////// 
 
+
 // ADD KEYBIND VARIABLES FOR EACH SECTION
 static const std::unordered_map<unsigned int, unsigned int *> section_to_key = {
-	{0, &vk_mbutton},   {1, &vk_f5},       {2, &vk_xbutton1}, {3, &vk_xkey},
-	{4, &vk_f8},        {5, &vk_zkey},     {6, &vk_xbutton2}, {7, &vk_f6},
-	{8, &vk_clipkey},   {9, &vk_laughkey}, {10, &vk_wallkey}, {11, &vk_leftbracket},
+	{0, &vk_mbutton},    {1, &vk_f5},           {2, &vk_xbutton1}, {3, &vk_xkey},
+	{4, &vk_f8},         {5, &vk_zkey},         {6, &vk_xbutton2}, {7, &vk_f6},
+	{8, &vk_clipkey},    {9, &vk_laughkey},     {10, &vk_wallkey}, {11, &vk_leftbracket},
 	{12, &vk_bouncekey}, {13, &vk_bunnyhopkey}, {14, &vk_Lagkey}};
-
 
 const std::string G_SETTINGS_FILEPATH = "RMCSettings.json";
 static std::string G_CURRENTLY_LOADED_PROFILE_NAME = "";
@@ -334,13 +295,14 @@ char KeyBuffer[256] = "None";
 char KeyBufferalt[256] = "None";
 char KeyBufferhuman[256] = "None";
 char KeyBufferhumanalt[256] = "None";
-char ItemDesyncSlot[256] = "1";
-char ItemSpeedSlot[256] = "1";
+char ItemDesyncSlot[256] = "5";
+char ItemSpeedSlot[256] = "3";
 char ItemClipSlot[256] = "7";
 char ItemClipDelay[256] = "34";
 char BunnyHopDelayChar[256] = "10";
 char WallhopPixels[256] = "300";
 char WallhopDelayChar[256] = "17";
+char WallhopBonusDelayChar[256] = "0";
 char WallhopDegrees[256] = "150";
 char SpamDelay[256] = "20";
 char RobloxSensValue[256] = "0.5";
@@ -351,6 +313,7 @@ char ChatKeyChar[2] = "/";
 char CustomTextChar[256] = "";
 char RobloxFPSChar[256] = "60";
 char AntiAFKTimeChar[256] = "15";
+char PressKeyDelayChar[256] = "16";
 
 
 // Toggles and switches
@@ -382,6 +345,9 @@ bool takeallprocessids = false;
 bool ontoptoggle = false;
 bool bunnyhoptoggled = false;
 bool bunnyhopsmart = true;
+bool presskeyinroblox = false;
+bool unequipinroblox = false;
+bool shortdescriptions = false;
 
 //////////////////////////
 bool islagswitch = false;
@@ -417,17 +383,21 @@ int real_delay = 1000;
 int RobloxPixelValue = 716;
 int RobloxWallWalkValue = -94;
 int WallhopDelay = 17;
+int WallhopBonusDelay = 0;
 int AntiAFKTime = 15;
 int display_scale = 100;
+int PressKeyDelay = 16;
+int WindowPosX = 0;
+int WindowPosY = 0;
 
-
-////////////////////////// 
+//////////////////////////
 float maxlagtime = 9.00f;
-int maxlagoverride = 50;
+int maxlagoverride = 10;
 int ovarlayverticaloffset = 50;
 int ovarlayhorisontaloffset = 50;
 int g_textSize = 24;
 ////////////////////////// 
+
 
 // Dropdown options
 const char* optionsforoffset[] = {"/e dance2", "/e laugh", "/e cheer"};
@@ -470,19 +440,16 @@ static float windowOpacityPercent = 100.0f;
 typedef LONG(NTAPI *NtSuspendProcess)(HANDLE ProcessHandle);
 typedef LONG(NTAPI *NtResumeProcess)(HANDLE ProcessHandle);
 
-////////////////////////// 
+//////////////////////////
 
 HWND g_overlay = nullptr;
 std::wstring g_overlayText = L"LagSwitch OFF";
 COLORREF g_textColor = RGB(255, 0, 0); // default green
 
-
 // Forward declaration
 void CreateOverlay(HWND parent);
 void DestroyOverlay();
 void UpdateOverlayPosition();
-
-
 
 LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -525,19 +492,13 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 		return 0;
 	}
 
-	case WM_DESTROY: 
+	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
 	}
 
-
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
-
-
-
-
-
 
 HWND GetWindowFromProcess(const std::vector<HANDLE> &pids)
 {
@@ -567,8 +528,6 @@ HWND GetWindowFromProcess(const std::vector<HANDLE> &pids)
 
 	return result;
 }
-
-
 
 void CreateOverlay(HINSTANCE hInstance)
 {
@@ -612,7 +571,6 @@ void CreateOverlay(HINSTANCE hInstance)
 				   L"", WS_POPUP, x, y, width, height, nullptr, nullptr, hInstance,
 				   nullptr);
 
-
 	if (!g_overlay) {
 		DWORD err = GetLastError();
 		wchar_t buffer[256];
@@ -625,9 +583,7 @@ void CreateOverlay(HINSTANCE hInstance)
 
 	ShowWindow(g_overlay, SW_SHOW);
 	UpdateWindow(g_overlay);
-	
 }
-
 
 void DestroyOverlay()
 {
@@ -651,16 +607,8 @@ void UpdateOverlayToWindow(HWND overlayHwnd, HWND targetHwnd)
 			     HWND_TOPMOST, // insert after Roblox
 			     rect.left + ovarlayhorisontaloffset, rect.top + ovarlayverticaloffset,
 			     width, height, SWP_NOACTIVATE | SWP_SHOWWINDOW);
-
 	}
-	
-	
 }
-
-
-
-
-
 
 const std::wstring FIREWALL_RULE_NAME = L"Roblox_Block";
 
@@ -727,6 +675,7 @@ static void LagOrUnLagProcess(const std::vector<HANDLE> &pids, bool suspend)
 }
 
 ////////////////////////// 
+
 
 // Helper function to suspend or resume a process
 static void SuspendOrResumeProcess(NtSuspendProcess pfnSuspend, NtResumeProcess pfnResume, const std::vector<HANDLE>& pids, bool suspend)
@@ -1072,56 +1021,86 @@ static void WallhopThread() {
 				std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 
-		if (toggle_jump) {
-			HoldKey(0x39);
-		}
-		
-        const bool lastpressed = lastpressedAD;
+		const bool lastpressed = lastpressedAD;
 
-		
 		if (wallhopswitch) {
-			
+
 			if (!lastpressed && autoflickdir) {
 				MoveMouse(wallhop_dx, 0);
 			} else {
 				MoveMouse(-wallhop_dx, 0);
 			}
-			
+
 		} else {
 			if (lastpressed && autoflickdir) {
 				MoveMouse(-wallhop_dx, 0);
 			} else {
 				MoveMouse(wallhop_dx, 0);
 			}
-			
-			
 		}
 
 		if (toggle_flick) {
-			if (wallhopswitch) {
+			if (WallhopBonusDelay > 0 && WallhopBonusDelay < WallhopDelay) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(WallhopBonusDelay));
+
+				if (toggle_jump) {
+					HoldKey(0x39);
+				}
+
+				std::this_thread::sleep_for(std::chrono::milliseconds(WallhopDelay - WallhopBonusDelay));
+			} else {
+				if (toggle_jump) {
+					HoldKey(0x39);
+				}
 				std::this_thread::sleep_for(std::chrono::milliseconds(WallhopDelay));
+			}
+
+			if (wallhopswitch) {
 				if (!lastpressed && autoflickdir) {
 					MoveMouse(-wallhop_dx, 0);
 				} else {
 					MoveMouse(wallhop_dx, 0);
 				}
 			} else {
-				std::this_thread::sleep_for(std::chrono::milliseconds(WallhopDelay));
 				if (lastpressed && autoflickdir) {
 					MoveMouse(wallhop_dx, 0);
 				} else {
 					MoveMouse(-wallhop_dx, 0);
 				}
 			}
+		} else {
+			if (toggle_jump) {
+				HoldKey(0x39);
+			}
 		}
 
 		if (toggle_jump) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(100 - WallhopDelay));
+            if (100 - WallhopDelay > 0) {
+			    std::this_thread::sleep_for(std::chrono::milliseconds(100 - WallhopDelay));
+            }
 			ReleaseKey(0x39);
 		}
 
 		iswallhopthread = false;
 	}
+}
+
+static void PressKeyThread() {
+    while (true) {
+		while (!ispresskeythread.load(std::memory_order_relaxed)) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+
+		if (vk_zkey == vk_dkey) {
+			ReleaseKeyBinded(vk_zkey);
+		}
+
+		HoldKeyBinded(vk_dkey);
+		std::this_thread::sleep_for(std::chrono::milliseconds(PressKeyDelay));
+		ReleaseKeyBinded(vk_dkey);
+
+		ispresskeythread = false;
+    }
 }
 
 static bool IsMainWindow(HWND hwnd)
@@ -1318,7 +1297,7 @@ static size_t OutputReleaseVersion(void *contents, size_t size, size_t nmemb, st
 // Generic function to get the content of a URL as a string.
 static std::string GetStringFromUrl(const wchar_t* url)
 {
-    DWORD timeout = 5000;
+    DWORD timeout = 500;
     
     HINTERNET hInternet = InternetOpen(L"Spencer-Macro-Utilities-Updater", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
     if (!hInternet) return "";
@@ -1348,237 +1327,242 @@ static std::string GetStringFromUrl(const wchar_t* url)
 
 static std::string GetRemoteVersion()
 {
-    return GetStringFromUrl(
-	    L"https://raw.githubusercontent.com/BLOCKCE/Spencer-Macro-Utilities-plus/main/version");
+	return GetStringFromUrl(
+		L"https://raw.githubusercontent.com/BLOCKCE/Spencer-Macro-Utilities-plus/main/version");
 }
 
 static std::string GetRemoteUpdateUrlTemplate()
 {
-    return GetStringFromUrl(
-	    L"https://raw.githubusercontent.com/BLOCKCE/Spencer-Macro-Utilities-plus/main/.github/autoupdaterurl");
+	return GetStringFromUrl(
+		L"https://raw.githubusercontent.com/BLOCKCE/Spencer-Macro-Utilities-plus/main/.github/autoupdaterurl");
 }
 
-// Helper function to download a file from a URL to a specified path
-bool DownloadFile(const std::wstring& url, const std::wstring& savePath) {
+
+// Generate file name for update
+static std::wstring GenerateRandomHexString()
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distrib(0, 15);
+
+    std::wstringstream wss;
+    for (int i = 0; i < 16; ++i) {
+	wss << std::hex << distrib(gen);
+    }
+    return wss.str();
+}
+
+bool DownloadToMemory(const std::wstring& url, std::vector<char>& data) {
     HINTERNET hInternet = InternetOpen(L"Spencer-Macro-Utilities-Updater", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
     if (!hInternet) {
         return false;
     }
 
-    HINTERNET hConnect = InternetOpenUrl(hInternet, url.c_str(), NULL, 0, INTERNET_FLAG_RELOAD, 0);
+    HINTERNET hConnect = InternetOpenUrl(hInternet, url.c_str(), NULL, 0, INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE, 0);
     if (!hConnect) {
-        InternetCloseHandle(hInternet);
-        return false;
-    }
-
-    HANDLE hFile = CreateFile(savePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile == INVALID_HANDLE_VALUE) {
-        InternetCloseHandle(hConnect);
         InternetCloseHandle(hInternet);
         return false;
     }
 
     char buffer[4096];
     DWORD bytesRead;
-    DWORD bytesWritten;
-    bool success = true;
-
+    
     while (InternetReadFile(hConnect, buffer, sizeof(buffer), &bytesRead) && bytesRead > 0) {
-        if (!WriteFile(hFile, buffer, bytesRead, &bytesWritten, NULL) || bytesRead != bytesWritten) {
-            success = false;
-            break;
-        }
+        data.insert(data.end(), buffer, buffer + bytesRead);
     }
 
-    CloseHandle(hFile);
     InternetCloseHandle(hConnect);
     InternetCloseHandle(hInternet);
-
-    return success;
+    
+    return !data.empty();
 }
 
-// Helper function to unzip a specific file from a zip archive
-bool UnzipSingleFile(const std::wstring &zipPath, const std::wstring &destFolder, const std::wstring &fileNameToExtract, const std::wstring &newFileName)
-{
-    HRESULT hr = CoInitialize(NULL);
-    if (FAILED(hr))
-	return false;
+bool ExtractFileFromMemory(const std::vector<char>& zipBuffer, const std::string& fileNameToExtract, std::vector<char>& extractedData) {
+    mz_zip_archive zip_archive;
+    mz_zip_zero_struct(&zip_archive);
 
-    IShellDispatch *pShellDisp = NULL;
-    hr = CoCreateInstance(CLSID_Shell, NULL, CLSCTX_INPROC_SERVER, IID_IShellDispatch, (void **)&pShellDisp);
-
-    if (SUCCEEDED(hr)) {
-	Folder *pZipFile = NULL;
-	hr = pShellDisp->NameSpace(_variant_t(zipPath.c_str()), &pZipFile);
-
-	if (SUCCEEDED(hr) && pZipFile) {
-	    Folder *pDestFolder = NULL;
-	    hr = pShellDisp->NameSpace(_variant_t(destFolder.c_str()), &pDestFolder);
-
-	    if (SUCCEEDED(hr) && pDestFolder) {
-		FolderItems *pZipItems = NULL;
-		hr = pZipFile->Items(&pZipItems);
-		if (SUCCEEDED(hr) && pZipItems) {
-
-		    // --- FIX 1: Use FolderItem* instead of IDispatch* ---
-		    FolderItem *pItemToCopy = NULL;
-		    hr = pZipItems->Item(_variant_t(fileNameToExtract.c_str()), &pItemToCopy);
-
-		    if (SUCCEEDED(hr) && pItemToCopy) {
-
-			// --- FIX 2: Pass options as a VARIANT, not an int ---
-			VARIANT vOptions;
-			vOptions.vt = VT_I4;
-			vOptions.lVal = 4 | 16; // 20L
-
-			hr = pDestFolder->CopyHere(_variant_t(pItemToCopy), vOptions);
-
-			// Release the item now that we're done with it
-			pItemToCopy->Release();
-
-			// Rename the extracted file
-			if (SUCCEEDED(hr)) {
-			    Sleep(500); // Give a moment for file system to catch up
-			    std::wstring oldPath = destFolder + L"\\" + fileNameToExtract;
-			    std::wstring newPath = destFolder + L"\\" + newFileName;
-			    if (!MoveFile(oldPath.c_str(), newPath.c_str())) {
-				hr = E_FAIL; // Mark as failed if rename fails
-			    }
-			}
-		    }
-		    pZipItems->Release();
-		}
-		pDestFolder->Release();
-	    }
-	    pZipFile->Release();
-	}
-	pShellDisp->Release();
+    if (!mz_zip_reader_init_mem(&zip_archive, zipBuffer.data(), zipBuffer.size(), 0)) {
+        return false;
     }
 
-    CoUninitialize();
-    return SUCCEEDED(hr);
+    int file_index = mz_zip_reader_locate_file(&zip_archive, fileNameToExtract.c_str(), NULL, 0);
+    if (file_index < 0) {
+        mz_zip_reader_end(&zip_archive);
+        return false; // File not found in archive
+    }
+
+    size_t uncompressed_size = 0;
+    void* pBuffer = mz_zip_reader_extract_to_heap(&zip_archive, file_index, &uncompressed_size, 0);
+    if (!pBuffer) {
+        mz_zip_reader_end(&zip_archive);
+        return false; // Failed to extract
+    }
+    
+    extractedData.assign(static_cast<char*>(pBuffer), static_cast<char*>(pBuffer) + uncompressed_size);
+    
+    mz_free(pBuffer);
+    mz_zip_reader_end(&zip_archive);
+
+    return true;
 }
 
-// Auto Updates entire project, called after pressing "Yes"
 void PerformUpdate(const std::string& newVersion, const std::string& localVersion) {
-    // Get the download URL template and construct the final download URL
+    // 1. Get remote update URL template and construct the final download URL
     std::string urlTemplateAnsi = GetRemoteUpdateUrlTemplate();
     if (urlTemplateAnsi.empty()) {
-        MessageBox(NULL, L"Failed to retrieve update configuration. Please check your internet connection and try again.", L"Update Error", MB_OK | MB_ICONERROR);
+        MessageBox(NULL, L"Failed to retrieve update URL configuration.", L"Update Error", MB_OK | MB_ICONERROR);
         return;
     }
 
+    // --- FIX 1: Replace ALL instances of the placeholder ---
     std::string placeholder = "{VERSION}";
-    size_t pos = urlTemplateAnsi.find(placeholder);
-    if (pos == std::string::npos) {
-        MessageBox(NULL, L"Invalid update configuration received. The URL template is malformed. Please contact support.", L"Update Error", MB_OK | MB_ICONERROR);
-        return;
+    size_t start_pos = 0;
+    while((start_pos = urlTemplateAnsi.find(placeholder, start_pos)) != std::string::npos) {
+        urlTemplateAnsi.replace(start_pos, placeholder.length(), newVersion);
+        start_pos += newVersion.length();
     }
-    urlTemplateAnsi.replace(pos, placeholder.length(), newVersion);
+    
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     std::wstring downloadUrl = converter.from_bytes(urlTemplateAnsi);
 
-    // Define all necessary local file paths
+    // 2. Download the zip file into a memory buffer
+    std::vector<char> zipData;
+    if (!DownloadToMemory(downloadUrl, zipData)) {
+        MessageBox(NULL, L"Failed to download the update. Please check your internet connection.", L"Update Error", MB_OK | MB_ICONERROR);
+        return;
+    }
+
+    // 3. Extract the target executable from the memory buffer into another memory buffer
+    std::vector<char> exeData;
+    const std::string exeNameInZip = "suspend.exe"; // The name of the EXE inside the .zip file
+    if (!ExtractFileFromMemory(zipData, exeNameInZip, exeData)) {
+        MessageBox(NULL, L"Failed to extract the update from the downloaded package. It may be corrupt.", L"Update Error", MB_OK | MB_ICONERROR);
+        return;
+    }
+
+    // 4. Define paths and generate a random temporary filename
     wchar_t currentExePathArr[MAX_PATH];
     GetModuleFileNameW(NULL, currentExePathArr, MAX_PATH);
     std::wstring currentExePath = currentExePathArr;
+    std::wstring currentExeName = PathFindFileNameW(currentExePathArr);
 
-    wchar_t tempPathBuffer[MAX_PATH];
-    GetTempPathW(MAX_PATH, tempPathBuffer);
-    std::wstring tempPath = tempPathBuffer;
+    wchar_t workingDirArr[MAX_PATH];
+    wcscpy_s(workingDirArr, currentExePathArr);
+    PathRemoveFileSpecW(workingDirArr);
+    std::wstring workingDir = workingDirArr;
 
-    std::wstring downloadedZipPath = tempPath + L"update.zip";
-    std::wstring newExeName = L"suspend_new.exe";
-    std::wstring tempExePath = tempPath + newExeName;
-    std::wstring batchFilePath = tempPath + L"updater.bat";
+    std::wstring randomFileName = GenerateRandomHexString();
+    std::wstring tempExePath = workingDir + L"\\" + randomFileName + L".tmp";
 
-    // Download and Unzip the update file
-    if (!DownloadFile(downloadUrl, downloadedZipPath)) {
-        MessageBox(NULL, L"Failed to download the update file. Please check your internet connection or try again later.", L"Update Error", MB_OK | MB_ICONERROR);
+    // 5. Write the in-memory EXE data to the temporary file on disk
+    HANDLE hFile = CreateFileW(tempExePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) {
+        MessageBox(NULL, L"Could not create temporary update file. Please check folder permissions.", L"Update Error", MB_OK | MB_ICONERROR);
         return;
     }
-    if (!UnzipSingleFile(downloadedZipPath, tempPath, L"suspend.exe", newExeName)) {
-        MessageBox(NULL, L"Failed to extract the update. The downloaded file might be corrupt. Please try again or update manually.", L"Update Error", MB_OK | MB_ICONERROR);
-        DeleteFile(downloadedZipPath.c_str());
+    DWORD bytesWritten;
+    if (!WriteFile(hFile, exeData.data(), exeData.size(), &bytesWritten, NULL) || bytesWritten != exeData.size()) {
+        CloseHandle(hFile);
+        DeleteFileW(tempExePath.c_str());
+        MessageBox(NULL, L"Failed to write update data to temporary file.", L"Update Error", MB_OK | MB_ICONERROR);
         return;
     }
+    CloseHandle(hFile);
 
-    // Conditionally generate the batch script based on folder name
+    // 6. Generate the appropriate batch script (conditionally)
     std::wstring batchScriptContent;
     std::wstring wLocalVersion = converter.from_bytes(localVersion);
     std::wstring wNewVersion = converter.from_bytes(newVersion);
 
-    // Get the parent folder of the current executable
-    size_t lastSlashPos = currentExePath.find_last_of(L"\\/");
-    std::wstring currentFolderPath = (lastSlashPos != std::wstring::npos) ? currentExePath.substr(0, lastSlashPos) : L"";
-    std::wstring currentFolderName = L"";
-    if (!currentFolderPath.empty()) {
-         size_t secondLastSlashPos = currentFolderPath.find_last_of(L"\\/");
-         currentFolderName = (secondLastSlashPos != std::wstring::npos) ? currentFolderPath.substr(secondLastSlashPos + 1) : currentFolderPath;
-    }
-    
-    // Check if the folder name itself ends with the local version string
+    // --- START: Re-integrated folder rename logic ---
     bool shouldRenameFolder = false;
-    if (!currentFolderName.empty() && currentFolderName.length() > wLocalVersion.length()) {
-        if (currentFolderName.substr(currentFolderName.length() - wLocalVersion.length()) == wLocalVersion) {
-            // Check for a common separator before the version string to be safer
-            wchar_t separator = currentFolderName[currentFolderName.length() - wLocalVersion.length() - 1];
-            if (separator == L'-' || separator == L'_' || separator == L' ') {
-                shouldRenameFolder = true;
-            }
+    std::wstring currentFolderPath = workingDir;
+    wchar_t folderNameBuffer[MAX_PATH];
+    wcscpy_s(folderNameBuffer, currentFolderPath.c_str());
+    PathStripPathW(folderNameBuffer);
+    std::wstring currentFolderName = folderNameBuffer;
+    
+    // Check if the folder name ends with the local version string
+    if (!currentFolderName.empty() && currentFolderName.length() > wLocalVersion.length() && 
+        currentFolderName.substr(currentFolderName.length() - wLocalVersion.length()) == wLocalVersion) {
+        // Check for a common separator before the version string to be safer
+        wchar_t separator = currentFolderName[currentFolderName.length() - wLocalVersion.length() - 1];
+        if (separator == L'-' || separator == L'_' || separator == L' ' || separator == 'V' || separator == 'v') {
+            shouldRenameFolder = true;
         }
     }
-    
-    if (shouldRenameFolder) {
-        // Build the new folder path and the final path for the new exe
-        std::wstring newFolderName = currentFolderName.substr(0, currentFolderName.length() - wLocalVersion.length()) + wNewVersion;
-        std::wstring parentOfCurrent = currentFolderPath.substr(0, currentFolderPath.find_last_of(L"\\/"));
-        std::wstring newFolderPath = parentOfCurrent + L"\\" + newFolderName;
-        std::wstring newExePathInRenamedFolder = newFolderPath + L"\\" + L"suspend.exe";
+    // --- END: Re-integrated folder rename logic ---
 
-        // Generate batch script WITH folder rename
-        batchScriptContent =
-            L"@echo off\n"
-            // Change directory to the temp folder to avoid locking the target directory
-            L"pushd \"%~dp0\"\n"
-            L"timeout /t 2 /nobreak > NUL\n"
-            // Rename the parent folder
-            L"REN \"" + currentFolderPath + L"\" \"" + newFolderName + L"\"\n"
-            // Copy the new exe into the *renamed* folder
-            L"copy /Y \"" + tempExePath + L"\" \"" + newExePathInRenamedFolder + L"\"\n"
-            // Relaunch the application from its new final location
-            L"start \"\" \"" + newExePathInRenamedFolder + L"\"\n"
-            // Clean up
-            L"popd\n"
-            L"del \"" + tempExePath + L"\"\n"
-            L"del \"" + downloadedZipPath + L"\"\n"
-            L"(goto) 2>nul & del \"%~f0\"";
+    wchar_t tempDir[MAX_PATH];
+    GetTempPathW(MAX_PATH, tempDir);
+    std::wstring batchFilePath = std::wstring(tempDir) + L"updater-" + GenerateRandomHexString() + L".bat";
+
+    if (shouldRenameFolder) {
+        // --- BATCH SCRIPT GENERATION: WITH FOLDER RENAME ---
+        std::wstring newFolderName = currentFolderName.substr(0, currentFolderName.length() - wLocalVersion.length()) + wNewVersion;
+        
+        wchar_t parentOfCurrentArr[MAX_PATH];
+        wcscpy_s(parentOfCurrentArr, currentFolderPath.c_str());
+        PathRemoveFileSpecW(parentOfCurrentArr);
+        
+        std::wstring newFolderPath = std::wstring(parentOfCurrentArr) + L"\\" + newFolderName;
+        std::wstring newExePathInRenamedFolder = newFolderPath + L"\\" + currentExeName;
+
+		std::wstring tempExePathAfterRename = newFolderPath + L"\\" + randomFileName + L".tmp";
+		std::wstring finalExePathInNewFolder = newFolderPath + L"\\" + currentExeName;
+		// --- BATCH SCRIPT GENERATION: RENAME ---
+		batchScriptContent =
+			L"@echo off\n"
+			L"pushd \"%~dp0\"\n\n"
+			L"echo Updating and renaming folder...\n"
+			L"timeout /t 2 /nobreak > NUL\n\n"
+			// Use 'move' with the full destination path to rename the folder.
+			L"move \"" + currentFolderPath + L"\" \"" + newFolderPath + L"\"\n\n"
+			// 2. Delete the old executable (which is now at its new path).
+			L"del /F /Q \"" + finalExePathInNewFolder + L"\"\n"
+			// Rename the .tmp file to the final executable name.
+			L"move \"" + tempExePathAfterRename + L"\" \"" + finalExePathInNewFolder + L"\"\n\n"
+			// 4. Relaunch the application from its final location.
+			L"start \"\" \"" + finalExePathInNewFolder + L"\"\n"
+			// 5. Self-delete the batch script.
+			L"(goto) 2>nul & del \"%~f0\"";
     } else {
-        // Generate ORIGINAL batch script (no folder rename)
+        // --- BATCH SCRIPT GENERATION: STANDARD (NO FOLDER RENAME) ---
         batchScriptContent =
             L"@echo off\n"
+			L"pushd \"%~dp0\"\n\n"
+            L"echo Updating in progress...\n"
             L"timeout /t 2 /nobreak > NUL\n"
-            L"copy /Y \"" + tempExePath + L"\" \"" + currentExePath + L"\"\n"
-            L"start \"\" \"" + currentExePath + L"\"\n"
-            L"del \"" + tempExePath + L"\"\n"
-            L"del \"" + downloadedZipPath + L"\"\n"
+            // Delete the original executable: %1 is current exe path
+            L"del /F /Q \"%~1\"\n"
+            // Rename the new temporary file (%2) to the original executable's name (%3)
+			L"move \"%~2\" \"%~1\"\n\n"
+            // Relaunch the newly updated application
+            L"start \"\" \"%~1\"\n"
+            // Self-delete the batch script
             L"(goto) 2>nul & del \"%~f0\"";
     }
 
-    // Write and execute the generated batch script
-    HANDLE hFile = CreateFileW(batchFilePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile != INVALID_HANDLE_VALUE) {
-        std::string mbBatchScriptContent = converter.to_bytes(batchScriptContent);
-        DWORD bytesWritten;
-        WriteFile(hFile, mbBatchScriptContent.c_str(), mbBatchScriptContent.length(), &bytesWritten, NULL);
-        CloseHandle(hFile);
+    // 7. Write and execute the batch script
+    HANDLE hBatchFile = CreateFileW(batchFilePath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hBatchFile != INVALID_HANDLE_VALUE) {
+        std::string mbBatchScript = converter.to_bytes(batchScriptContent);
+        DWORD batchBytesWritten;
+        WriteFile(hBatchFile, mbBatchScript.c_str(), mbBatchScript.length(), &batchBytesWritten, NULL);
+        CloseHandle(hBatchFile);
 
-        ShellExecuteW(NULL, L"open", batchFilePath.c_str(), NULL, NULL, SW_HIDE);
-        exit(0);
+        // Prepare parameters for ShellExecute. Each parameter must be quoted.
+        // For the standard case, we pass parameters. For the rename case, we don't, as the paths are hardcoded.
+        std::wstring params = L"";
+        if (!shouldRenameFolder) {
+            params = L"\"" + currentExePath + L"\" \"" + tempExePath + L"\" \"" + currentExeName + L"\"";
+        }
+        
+        ShellExecuteW(NULL, L"open", batchFilePath.c_str(), params.c_str(), NULL, SW_HIDE);
+        exit(0); // Exit the current application immediately
     } else {
-        MessageBox(NULL, L"Could not create the updater script. Please check folder permissions or update manually.", L"Update Error", MB_OK | MB_ICONERROR);
-        DeleteFile(downloadedZipPath.c_str());
-        DeleteFile(tempExePath.c_str());
+        MessageBox(NULL, L"Could not create the updater script. Please check permissions.", L"Update Error", MB_OK | MB_ICONERROR);
+        DeleteFileW(tempExePath.c_str());
     }
 }
 
@@ -1705,11 +1689,9 @@ static std::string TrimNullChars(const char *buffer, size_t size)
     return std::string(buffer, length);
 }
 
-
-
 using NumericVar = std::variant<int*, float*, unsigned int*>;
 
-// Boolean variables
+// Boolean variables to save
 const std::unordered_map<std::string, bool *> bool_vars = {
 	{"macrotoggled", &macrotoggled},
 	{"shiftswitch", &shiftswitch},
@@ -1738,15 +1720,17 @@ const std::unordered_map<std::string, bool *> bool_vars = {
 	{"takeallprocessids", &takeallprocessids},
 	{"ontoptoggle", &ontoptoggle},
 	{"bunnyhopsmart", &bunnyhopsmart},
+	{"presskeyinroblox", &presskeyinroblox},
+	{"unequipinroblox", &unequipinroblox},
 
-	////////////////////////// 
+	//////////////////////////
 	{"islagswitch", &islagswitch},
 	{"autoflickdir", &autoflickdir},
 	{"lagoverlayswitch", &lagoverlayswitch},
 	//////////////////////////
 };
 
-// Numeric variables
+// Numeric variables to save
 const std::unordered_map<std::string, NumericVar> numeric_vars = {
 	{"scancode_shift", &scancode_shift},
 	{"vk_f5", &vk_f5},
@@ -1788,8 +1772,10 @@ const std::unordered_map<std::string, NumericVar> numeric_vars = {
 	{"windowOpacityPercent", &windowOpacityPercent},
 	{"AntiAFKTime", &AntiAFKTime},
 	{"display_scale", &display_scale},
+	{"WindowPosX", &WindowPosX},
+	{"WindowPosY", &WindowPosY},
 
-	////////////////////////// 
+	//////////////////////////
 	{"vk_Lagkey", &vk_Lagkey},
 	{"maxlagtime", &maxlagtime},
 	{"ovarlayhorisontaloffset", &ovarlayhorisontaloffset},
@@ -1798,7 +1784,7 @@ const std::unordered_map<std::string, NumericVar> numeric_vars = {
 	//////////////////////////
 };
 
-// Char variables
+// Char variables to save
 const std::vector<std::pair<std::string, std::pair<char*, size_t>>> char_arrays = {
     {"settingsBuffer", {settingsBuffer, sizeof(settingsBuffer)}},
     {"ItemDesyncSlot", {ItemDesyncSlot, sizeof(ItemDesyncSlot)}},
@@ -1817,6 +1803,8 @@ const std::vector<std::pair<std::string, std::pair<char*, size_t>>> char_arrays 
 	{"RobloxFPSChar", {RobloxFPSChar, sizeof(RobloxFPSChar)}},
 	{"AntiAFKTimeChar", {AntiAFKTimeChar, sizeof(AntiAFKTimeChar)}},
 	{"WallhopDelayChar", {WallhopDelayChar, sizeof(WallhopDelayChar)}},
+	{"WallhopBonusDelayChar", {WallhopBonusDelayChar, sizeof(WallhopBonusDelayChar)}},
+	{"PressKeyDelayChar", {PressKeyDelayChar, sizeof(PressKeyDelayChar)}},
 };
 
 void SaveSettings(const std::string& filepath, const std::string& profile_name) {
@@ -1855,6 +1843,7 @@ void SaveSettings(const std::string& filepath, const std::string& profile_name) 
         current_profile_data["section_toggles"] = std::vector<bool>(section_toggles, section_toggles + section_amounts);
         current_profile_data["section_order_vector"] = std::vector<int>(section_order, section_order + section_amounts);
     }
+
     current_profile_data["text"] = text;
     current_profile_data["screen_width"] = screen_width;
     current_profile_data["screen_height"] = screen_height;
@@ -1956,8 +1945,7 @@ void SaveSettings(const std::string& filepath, const std::string& profile_name) 
                     // It's an object, but not in "Profile X" format.
                     // Assume it's an old flat format if it contains recognizable settings.
                     // This check helps differentiate an old config from an empty or unrelated JSON object.
-                    if (existing_file_data.contains("text") || // A common key from your old format
-                        (!bool_vars.empty() && !bool_vars.begin()->first.empty() && existing_file_data.contains(bool_vars.begin()->first)) ||
+                    if ((!bool_vars.empty() && !bool_vars.begin()->first.empty() && existing_file_data.contains(bool_vars.begin()->first)) ||
                         (!numeric_vars.empty() && !numeric_vars.begin()->first.empty() && existing_file_data.contains(numeric_vars.begin()->first)))
                     {
                         std::cout << "Old format detected during save. Converting. Old data will be under 'Profile 1'." << std::endl;
@@ -1992,6 +1980,11 @@ void SaveSettings(const std::string& filepath, const std::string& profile_name) 
         root_json_output[METADATA_KEY][LAST_ACTIVE_PROFILE_KEY] = G_CURRENTLY_LOADED_PROFILE_NAME;
     }
 
+	if (profile_name != "SAVE_DEFAULT_90493") {
+		// Global variables that don't change across profiles go here saved when not saving as (default)
+		root_json_output[METADATA_KEY]["shortdescriptions"] = shortdescriptions;
+	}
+
     // Write the root JSON (which now contains all profiles) to file
     std::ofstream outfile(filepath);
     if (outfile.is_open()) {
@@ -2007,7 +2000,6 @@ void LoadSettings(const std::string& filepath, const std::string& profile_name) 
 	if (profile_name == "") {
 		return;
 	}
-
 
 	std::ifstream file;
 	bool fileFound = false;
@@ -2033,7 +2025,7 @@ void LoadSettings(const std::string& filepath, const std::string& profile_name) 
 
 	if (!fileFound) {
 		std::cerr << "Info: Settings file '" << filepath 
-				 << "' not found in current or parent directory. Using default values." << std::endl;
+				 << "' not found in current or parent directory. Using default values. Saving profile 1." << std::endl;
 		return;
 	}
 
@@ -2048,7 +2040,7 @@ void LoadSettings(const std::string& filepath, const std::string& profile_name) 
 	}
 
 	// Make default profile if it doesn't exist
-    if ((!root_file_json.contains("(default)") || (profile_name == "SAVE_DEFAULT_90493"))) {
+    if ((!root_file_json.contains("(default)") && (profile_name == "SAVE_DEFAULT_90493"))) {
         SaveSettings(filepath, "SAVE_DEFAULT_90493");
     }
 
@@ -2147,7 +2139,6 @@ void LoadSettings(const std::string& filepath, const std::string& profile_name) 
                      }
 				}
 
-
 				////////////////////////// 
 				if (std::find(order.begin(), order.end(), 14) == order.end() && order.size() >= 1) {
 					if (order.size() >= 2) {
@@ -2166,7 +2157,6 @@ void LoadSettings(const std::string& filepath, const std::string& profile_name) 
         if (settings_to_load.contains("text") && settings_to_load["text"].is_string()) {
             text = settings_to_load["text"].get<std::string>();
         }
-        
         if (settings_to_load.contains("screen_width") && settings_to_load["screen_width"].is_number_integer()) {
             screen_width = settings_to_load.value("screen_width", screen_width);
         }
@@ -2174,8 +2164,16 @@ void LoadSettings(const std::string& filepath, const std::string& profile_name) 
             screen_height = settings_to_load.value("screen_height", screen_height);
         }
 
-		
-        // Load theme data
+		// Load global variables in metadata (applies across all profiles)
+		if (root_file_json.contains(METADATA_KEY) && root_file_json[METADATA_KEY].is_object()) {
+			const auto& metadata = root_file_json[METADATA_KEY];
+
+			if (metadata.contains("shortdescriptions") && metadata["shortdescriptions"].is_boolean()) {
+				shortdescriptions = metadata["shortdescriptions"].get<bool>();
+			}
+		}
+
+		// Load theme data
         current_theme_index = settings_to_load.value("current_theme_index", 0);
         show_theme_editor = settings_to_load.value("show_theme_editor", false);
 
@@ -2324,7 +2322,7 @@ bool DeleteProfileFromFile(const std::string& filepath, const std::string& profi
         if (WriteJsonToFile(filepath, root_json)) {
             if (G_CURRENTLY_LOADED_PROFILE_NAME == profile_name) {
                 G_CURRENTLY_LOADED_PROFILE_NAME = "";
-                std::cout << "Info: Deleted profile '" << profile_name << "' was active. Settings might need reload or reset." << std::endl;
+                std::cout << "Info: Deleted profile '" << profile_name << "' was active." << std::endl;
             }
             return true;
         }
@@ -2430,6 +2428,13 @@ bool TryLoadLastActiveProfile(const std::string& filepath) {
 			file.open(real_filepath);
 			if (file.is_open()) {
 				fileFound = true;
+				LoadSettings(real_filepath.string(), "(default)");
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
+				G_CURRENTLY_LOADED_PROFILE_NAME = "Profile 1";
+				SaveSettings(filepath, "Profile 1");
+
+				std::cerr << "Found Parent Save File!" << std::endl;
+				return true;
 			}
 		}
 	}
@@ -2559,8 +2564,9 @@ namespace ProfileUI {
 			int old_s_selected_profile_idx = -1;
             menuHeight = std::min(menuHeight, 300.0f);
 
-
-            ImGui::SetNextWindowPos(ImVec2(buttonPos.x, buttonPos.y - menuHeight - ImGui::GetStyle().WindowPadding.y));
+            //////////////////////////
+            ImGui::SetNextWindowPos(ImVec2(buttonPos.x, buttonPos.y + ImGui::GetItemRectSize().y + ImGui::GetStyle().WindowPadding.y));
+            //////////////////////////
             ImGui::SetNextWindowSize(ImVec2(menuWidth, menuHeight));
 
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
@@ -2854,21 +2860,31 @@ constexpr std::array<SectionConfig, section_amounts> SECTION_CONFIGS = {{
     {"Ledge Bounce", "Briefly Falls off a Ledge to Then Bounce Off it While Falling"},
     {"Smart Bunnyhop", "Intelligently enables or disables Bunnyhop for any Key"},
 
-	////////////////////////// 
-	{"Lag Switch", "Lags the game"}
+    //////////////////////////
+	{"Lag Switch", "Lags the game"},
 	//////////////////////////
 }};
 
 static void InitializeSections()
 {
     sections.clear();
-    for (size_t i = 0; i < SECTION_CONFIGS.size(); ++i) {
-	sections.push_back({
-		SECTION_CONFIGS[i].title, SECTION_CONFIGS[i].description,
-		false, // Fallback Option1
-		50.0f  // Fallback Option2
-	});
-    }
+    if (shortdescriptions) {
+        for (size_t i = 0; i < SECTION_CONFIGS.size(); ++i) {
+			sections.push_back({
+				SECTION_CONFIGS[i].title, "",
+				false, // Fallback Option1
+				50.0f  // Fallback Option2
+			});
+		}
+	} else {
+		for (size_t i = 0; i < SECTION_CONFIGS.size(); ++i) {
+			sections.push_back({
+				SECTION_CONFIGS[i].title, SECTION_CONFIGS[i].description,
+				false, // Fallback Option1
+				50.0f  // Fallback Option2
+			});
+		}
+	}
 }
 
 static unsigned int BindKeyMode(unsigned int currentkey)
@@ -3050,6 +3066,26 @@ static void DisablePowerThrottling() {
                           sizeof(state));
 }
 
+void CheckDisplayScale(HWND hwnd, int display_scale) {
+    // Per-Monitor DPI Awareness
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
+    UINT dpi = GetDpiForWindow(hwnd);
+    int currentScalePercent = (int)(dpi * 100 / USER_DEFAULT_SCREEN_DPI); // 96 DPI base
+
+    if (currentScalePercent != 100 && display_scale != currentScalePercent) {
+        std::wstring msg = L"Your display scaling doesn't match the program's settings. "
+                           L"Your current display scale is " + std::to_wstring(currentScalePercent) +
+                           L"%, the Macro's display scale is " + std::to_wstring(display_scale) +
+                           L"%. Make these two equal by either updating the Macro's Settings or your Windows Settings.";
+
+        MessageBox(hwnd,
+                   msg.c_str(),
+                   L"Display Scaling Mismatch",
+                   MB_OK | MB_ICONWARNING);
+    }
+}
+
 // START OF PROGRAM
 static void RunGUI()
 {
@@ -3058,19 +3094,38 @@ static void RunGUI()
 	// Initialize a basic Win32 window
 	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("Roblox Macro Client"), NULL };
 
-	// CUSTOM ICONS DON'T WORK AND I DONT KNOW WHY!!!!!!!!!!!!!
-	/* wc.hIcon = LoadIcon(wc.hInstance, MAKEINTRESOURCE(IDI_ICON2));
-	wc.hIconSm = LoadIcon(wc.hInstance, MAKEINTRESOURCE(IDI_ICON2));
-	*/
+	// Load icons
+	wc.hIcon = LoadIcon(wc.hInstance, MAKEINTRESOURCE(IDI_ICON1));
+	wc.hIconSm = LoadIcon(wc.hInstance, MAKEINTRESOURCE(IDI_ICON1));
+
+	// Override old default profile to new one
+	SaveSettings(G_SETTINGS_FILEPATH, "SAVE_DEFAULT_90493");
 	
 	TryLoadLastActiveProfile(G_SETTINGS_FILEPATH);
 
+	// Load Settings
 	LoadSettings(G_SETTINGS_FILEPATH, "SAVE_DEFAULT_90493"); // Only check for existence of default
 
 	RegisterClassEx(&wc);
-	HWND hwnd = CreateWindow(wc.lpszClassName, _T("Spencer Macro Client"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
+	HWND hwnd = CreateWindow(wc.lpszClassName, _T("Spencer Macro Client Plus"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
+	::hwnd = hwnd;
 	SetTitleBarColor(hwnd, RGB(0, 0, 0));
-	SetWindowPos(hwnd, NULL, 0, 0, screen_width, screen_height, SWP_NOZORDER | SWP_NOMOVE);
+
+	// Load Window coordinates and remove invalid coordinates
+
+	if (WindowPosX < 0) {
+		WindowPosX = 0;
+	}
+
+	if (WindowPosY < 0) {
+		WindowPosY = 0;
+	}
+
+	if (WindowPosX == 0 && WindowPosY == 0) {
+		SetWindowPos(hwnd, NULL, 0, 0, screen_width, screen_height, SWP_NOZORDER | SWP_NOMOVE);
+	} else {
+		SetWindowPos(hwnd, NULL, WindowPosX, WindowPosY, screen_width, screen_height, SWP_NOZORDER);
+	}
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd)) {
@@ -3233,7 +3288,7 @@ static void RunGUI()
 
             // Title and status
             ImGui::PushFont(mainfont);
-            ImGui::TextColored(current_theme.accent_primary, "ROBLOX MACRO UTILITIES");
+            ImGui::TextColored(current_theme.accent_primary, "SPENCER MACRO UTILITIES PLUS");
             ImGui::PopFont();
 
             ImGui::SameLine();
@@ -3261,8 +3316,12 @@ static void RunGUI()
                 ImGui::Text("UPDATE AVAILABLE");
                 ImGui::PopStyleColor();
             } else {
-                ImGui::TextColored(current_theme.text_secondary, "v3.0.0.2");
+                ImGui::TextColored(current_theme.text_secondary, "v3.0.3.2");
             }
+
+            static bool show_settings_menu = false;
+
+            
             
             // Quick controls
             ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
@@ -3284,186 +3343,196 @@ static void RunGUI()
                 SetLayeredWindowAttributes(hwnd, 0, alphaByte, LWA_ALPHA);
             }
 
-            ImGui::SameLine();
-            if (ImGui::Button("Theme Editor")) {
-                show_theme_editor = !show_theme_editor;
-            }
 
             
+
+            ImGui::SameLine(ImGui::GetWindowWidth() - 383);
+
+            if (ImGui::Button("Settings")) {
+	            show_settings_menu = !show_settings_menu;
+            }
+
+            ImGui::SameLine();
+
+            ProfileUI::DrawProfileManagerUI();
+            
+
+
+            if (show_settings_menu) {
+	            // Get the main window size
+	            ImVec2 main_window_size = ImGui::GetIO().DisplaySize;
+	            float child_width = main_window_size.x * 0.5f;
+	            float child_height = main_window_size.y * 0.5f;
+
+	            // Calculate position to center the child window
+	            ImVec2 child_pos = ImVec2(
+		            (main_window_size.x * 0.4f),
+		            (main_window_size.y - child_height - 90) * 0.5f
+	            );
+
+	            // Set the next window's position and size
+	            ImGui::SetNextWindowPos(child_pos, ImGuiCond_Once);
+	            ImGui::SetNextWindowSize(ImVec2(child_width, child_height), ImGuiCond_Always);
+
+	            // Begin the child window (non-draggable)
+	            ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
+
+	            if (ImGui::Begin("Settings Menu", &show_settings_menu, window_flags)) {
+		            // Begin a scrollable child region for the settings list
+		            ImGui::BeginChild("SettingsList", ImVec2(0, 0), true);
+
+		            // Setting: Windows Display Scale
+		            ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Roblox Executable:");
+                    ImGui::SameLine();
+                    ImGui::SetNextItemWidth(200);
+                    ImGui::InputText("##RobloxExe", settingsBuffer, sizeof(settingsBuffer), ImGuiInputTextFlags_CharsNoBlank);
+        
+		            ImGui::Separator();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Sensitivity:");
+                    ImGui::SameLine();
+                    ImGui::SetNextItemWidth(80);
+                    if (ImGui::InputText("##Sensitivity", RobloxSensValue, sizeof(RobloxSensValue), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
+                        PreviousSensValue = -1;
+                    }
+
+                    ImGui::SameLine();
+                    ImGui::TextWrapped("FPS:");
+                    ImGui::SameLine();
+                    ImGui::SetNextItemWidth(40.0f);
+                    if (ImGui::InputText("##FPS", RobloxFPSChar, sizeof(RobloxFPSChar),
+	                         ImGuiInputTextFlags_CharsDecimal |
+		                         ImGuiInputTextFlags_CharsNoBlank)) {
+                        try {
+                            RobloxFPS = std::stoi(RobloxFPSChar);
+                        } catch (const std::invalid_argument &e) {
+                        } catch (const std::out_of_range &e) {
+                        }
+                    }
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Cam-Fix:");
+                    ImGui::SameLine();
+                    if (ImGui::Checkbox("##CamFix", &camfixtoggle) || PreviousSensValue == -1) {
+                        wallhopupdate = false;
+                        if (PreviousSensValue != -1) {
+                            wallhopupdate = true;
+                        }
+                        PreviousSensValue = -1;
+                        PreviousWallWalkValue = -1;
+
+                        try {
+                            if (wallhopupdate) {
+                                float factor = camfixtoggle ? 1.388888889f : 1.0f / 1.388888889f;
+                                if (wallhopswitch) {
+                                    wallhop_dx = std::round(std::stoi(WallhopPixels) * (camfixtoggle ? -factor : factor));
+                                    wallhop_dy = std::round(std::stoi(WallhopPixels) * (camfixtoggle ? factor : -factor));
+                                } else {
+                                    wallhop_dx = std::round(std::stoi(WallhopPixels) * factor);
+                                    wallhop_dy = std::round(std::stoi(WallhopPixels) * -factor);
+                                    sprintf(WallhopPixels, "%d", wallhop_dx);
+                                }
+                            }
+                        } catch (...) {}
+
+                        float CurrentWallWalkValue = atof(RobloxSensValue);
+                        float baseValue = camfixtoggle ? 500.0f : 360.0f;
+                        wallwalk_strengthx = -static_cast<int>(std::round((baseValue / CurrentWallWalkValue) * 0.13f));
+                        wallwalk_strengthy = static_cast<int>(std::round((baseValue / CurrentWallWalkValue) * 0.13f));
+                        sprintf(RobloxWallWalkValueChar, "%d", wallwalk_strengthx);
+
+                        float CurrentSensValue = atof(RobloxSensValue);
+                        try {
+                            float baseValue = camfixtoggle ? 500.0f : 360.0f;
+                            float multiplier = (359.0f / 360.0f) * (359.0f / 360.0f);
+                            RobloxPixelValue = static_cast<int>(std::round((baseValue / CurrentSensValue) * multiplier));
+                        } catch (...) {}
+
+                        PreviousSensValue = CurrentSensValue;
+                        sprintf(RobloxPixelValueChar, "%d", RobloxPixelValue);
+                        try {
+                            chatkey = ChatKeyChar;
+                            speed_strengthx = std::stoi(RobloxPixelValueChar);
+                            speed_strengthy = -std::stoi(RobloxPixelValueChar);
+                        } catch (...) {}
+                    }
+
+                    ImGui::SameLine(ImGui::GetWindowWidth() - 154);
+
+                    if (ImGui::Button("Theme Editor")) {
+                        show_theme_editor = !show_theme_editor;
+                    }
+
+                    ImGui::Separator();
+
+		            ImGui::Text("Your Current Windows Display Scale Value (10-500%):");
+		            ImGui::SetNextItemWidth(150);
+
+		            if (ImGui::InputInt("##DisplayScale", &display_scale)) {
+			            if (display_scale < 10)
+				            display_scale = 10;
+			            if (display_scale > 500)
+				            display_scale = 500;
+		            }
+		            ImGui::SameLine();
+		            ImGui::Text("%%");
+
+		            ImGui::Separator();
+
+		            ImGui::AlignTextToFramePadding();
+		            ImGui::Text("Amount of Minutes Between Anti-AFK Runs:");
+		            ImGui::SameLine();
+		            ImGui::SetNextItemWidth(30.0f);
+		            if (ImGui::InputText("##AntiAFKTime", AntiAFKTimeChar, sizeof(AntiAFKTimeChar), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
+			            try {
+				            AntiAFKTime = std::stoi(AntiAFKTimeChar);
+			            } catch (const std::invalid_argument &e) {
+			            } catch (const std::out_of_range &e) {
+			            }
+		            }
+
+		            ImGui::Separator();
+
+		            ImGui::Checkbox("Switch Macro From \"Left Shift\" to \"Control\" for Shiftlock", &shiftswitch); // Checkbox for toggling
+
+		            ImGui::Separator();
+
+		            ImGui::Checkbox("Force-Set Chat Open Key to \"/\" (Most Stable)", &chatoverride);
+
+		            ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Chat Key:");
+		            ImGui::SameLine();
+		            ImGui::SetNextItemWidth(50);
+		            if (ImGui::InputText("##ChatKeyGlobal", ChatKeyChar,
+				                 sizeof(ChatKeyChar),
+				                 ImGuiInputTextFlags_CharsNoBlank)) {
+			            if (strlen(ChatKeyChar) > 1) {
+				            ChatKeyChar[1] = '\0';
+			            }
+			            vk_chatkey = ChatKeyCharToVK(ChatKeyChar);
+		            }
+
+		            ImGui::Separator();
+
+		            if (ImGui::Checkbox("Remove Side-Bar Macro Descriptions", &shortdescriptions)) {
+			            InitializeSections();
+		            }
+
+		            ImGui::Separator();
+
+
+
+		            // End the scrollable child region
+		            ImGui::EndChild();
+	            }
+	            ImGui::End();
+            }
 
             ImGui::EndChild();
 
             // Global Settings section
-            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 8);
-            ImGui::BeginChild("GlobalSettings", ImVec2(display_size.x - 32, 150), true);
-
-            ImGui::TextColored(current_theme.accent_primary, "GLOBAL SETTINGS");
-            ImGui::Separator();
-            ImGui::Spacing();
-
-            // First row
-            ImGui::Text("Roblox Executable:");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(200);
-            ImGui::InputText("##RobloxExe", settingsBuffer, sizeof(settingsBuffer), ImGuiInputTextFlags_CharsNoBlank);
-
-            ImGui::SameLine();
-            ImGui::Text("Sensitivity:");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(80);
-            if (ImGui::InputText("##Sensitivity", RobloxSensValue, sizeof(RobloxSensValue), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
-                PreviousSensValue = -1;
-            }
-
-            ImGui::SameLine();
-	    ImGui::TextWrapped("FPS:");
-	    ImGui::SameLine();
-	    ImGui::SetNextItemWidth(40.0f);
-	    if (ImGui::InputText("##FPS", RobloxFPSChar, sizeof(RobloxFPSChar),
-				 ImGuiInputTextFlags_CharsDecimal |
-					 ImGuiInputTextFlags_CharsNoBlank)) {
-		    try {
-			    RobloxFPS = std::stoi(RobloxFPSChar);
-		    } catch (const std::invalid_argument &e) {
-		    } catch (const std::out_of_range &e) {
-		    }
-	    }
-
-            ImGui::SameLine();
-            ImGui::Text("Cam-Fix:");
-            ImGui::SameLine();
-            if (ImGui::Checkbox("##CamFix", &camfixtoggle) || PreviousSensValue == -1) {
-                wallhopupdate = false;
-                if (PreviousSensValue != -1) {
-                    wallhopupdate = true;
-                }
-                PreviousSensValue = -1;
-                PreviousWallWalkValue = -1;
-
-                try {
-                    if (wallhopupdate) {
-                        float factor = camfixtoggle ? 1.388888889f : 1.0f / 1.388888889f;
-                        if (wallhopswitch) {
-                            wallhop_dx = std::round(std::stoi(WallhopPixels) * (camfixtoggle ? -factor : factor));
-                            wallhop_dy = std::round(std::stoi(WallhopPixels) * (camfixtoggle ? factor : -factor));
-                        } else {
-                            wallhop_dx = std::round(std::stoi(WallhopPixels) * factor);
-                            wallhop_dy = std::round(std::stoi(WallhopPixels) * -factor);
-                            sprintf(WallhopPixels, "%d", wallhop_dx);
-                        }
-                    }
-                } catch (...) {}
-
-                float CurrentWallWalkValue = atof(RobloxSensValue);
-                float baseValue = camfixtoggle ? 500.0f : 360.0f;
-                wallwalk_strengthx = -static_cast<int>(std::round((baseValue / CurrentWallWalkValue) * 0.13f));
-                wallwalk_strengthy = static_cast<int>(std::round((baseValue / CurrentWallWalkValue) * 0.13f));
-                sprintf(RobloxWallWalkValueChar, "%d", wallwalk_strengthx);
-
-                float CurrentSensValue = atof(RobloxSensValue);
-                try {
-                    float baseValue = camfixtoggle ? 500.0f : 360.0f;
-                    float multiplier = (359.0f / 360.0f) * (359.0f / 360.0f);
-                    RobloxPixelValue = static_cast<int>(std::round((baseValue / CurrentSensValue) * multiplier));
-                } catch (...) {}
-
-                PreviousSensValue = CurrentSensValue;
-                sprintf(RobloxPixelValueChar, "%d", RobloxPixelValue);
-                try {
-                    chatkey = ChatKeyChar;
-                    speed_strengthx = std::stoi(RobloxPixelValueChar);
-                    speed_strengthy = -std::stoi(RobloxPixelValueChar);
-                } catch (...) {}
-            }
-
-            // Second row
-            ImGui::Text("Chat Override:");
-            ImGui::SameLine();
-            ImGui::Checkbox("##ChatOverride", &chatoverride);
-
-            ImGui::SameLine();
-            ImGui::Text("Shift to Control:");
-            ImGui::SameLine();
-            ImGui::Checkbox("##ShiftSwitch", &shiftswitch);
-
-            if (shiftswitch) {
-                scancode_shift = 0x1D;
-            } else {
-                scancode_shift = 0x2A;
-            }
-
-            ImGui::SameLine();
-            ImGui::Text("Chat Key:");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(50);
-            if (ImGui::InputText("##ChatKeyGlobal", ChatKeyChar, sizeof(ChatKeyChar), ImGuiInputTextFlags_CharsNoBlank)) {
-                if (strlen(ChatKeyChar) > 1) {
-                    ChatKeyChar[1] = '\0';
-                }
-                vk_chatkey = ChatKeyCharToVK(ChatKeyChar);
-            }
-
-            static bool show_settings_menu = false;
-
-			ImGui::SameLine(ImGui::GetWindowWidth() - 425);
-
-            if (ImGui::Button("Extra Settings")) {
-				show_settings_menu = !show_settings_menu;
-			}
-
-            ImGui::SameLine();
-			
-            ProfileUI::DrawProfileManagerUI();
             
-
-			if (show_settings_menu) {
-				// Get the main window size
-				ImVec2 main_window_size = ImGui::GetIO().DisplaySize;
-				float child_width = main_window_size.x * 0.4f;
-				float child_height = main_window_size.y * 0.4f;
-
-				// Calculate position to center the child window
-				ImVec2 child_pos = ImVec2(
-					(main_window_size.x - child_width + 750) * 0.5f,
-					(main_window_size.y - child_height - 90) * 0.5f
-				);
-
-				// Set the next window's position and size
-				ImGui::SetNextWindowPos(child_pos, ImGuiCond_Once);
-				ImGui::SetNextWindowSize(ImVec2(child_width, child_height), ImGuiCond_Always);
-
-				// Begin the child window (non-draggable)
-				ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
-
-				if (ImGui::Begin("Settings Menu", &show_settings_menu, window_flags)) {
-					// Begin a scrollable child region for the settings list
-					ImGui::BeginChild("SettingsList", ImVec2(0, 0), true);
-
-					// Setting: Windows Display Scale
-					ImGui::Text("Windows Display Scale:");
-					const char* scale_options[] = { "100%", "125%", "150%", "175%", "200%", "225%", "250%", "275%", "300%"};
-					const int scale_values[] = { 100, 125, 150, 175, 200, 225, 250, 275, 300};
-					// Format the current display_scale as the preview value
-					char preview[16];
-					snprintf(preview, sizeof(preview), "%d%%", display_scale);
-					ImGui::SetNextItemWidth(150);
-					if (ImGui::BeginCombo("##DisplayScale", preview)) {
-						for (int i = 0; i < IM_ARRAYSIZE(scale_options); i++) {
-							bool is_selected = (display_scale == scale_values[i]);
-							if (ImGui::Selectable(scale_options[i], is_selected)) {
-								display_scale = scale_values[i]; // Directly update display_scale
-							}
-						}
-						ImGui::EndCombo();
-					}
-
-					// End the scrollable child region
-					ImGui::EndChild();
-				}
-				ImGui::End();
-			}
-
-            ImGui::EndChild(); // End Global Settings child window
 
             // Main content area
             ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 8);
@@ -3473,7 +3542,7 @@ static void RunGUI()
             float right_panel_width = display_size.x - left_panel_width - 43;
 
             // Left panel - Macro list
-            ImGui::BeginChild("MacroList", ImVec2(left_panel_width, display_size.y - 320), true);
+            ImGui::BeginChild("MacroList", ImVec2(left_panel_width, display_size.y - 154), true);
 
             ImGui::PushFont(mainfont);
             ImGui::TextColored(current_theme.accent_primary, "MACROS");
@@ -3503,7 +3572,15 @@ static void RunGUI()
 
                 // Calculate text sizes with wrapping
                 ImVec2 titleSize = ImGui::CalcTextSize(sections[i].title.c_str());
-                ImVec2 descSize = ImGui::CalcTextSize(sections[i].description.c_str());
+
+                //////////////////////////
+                ImVec2 descSize(0.0f, 0.0f);
+		        if (!sections[i].description.empty()) {
+                    descSize = ImGui::CalcTextSize(sections[i].description.c_str());
+                }
+                //////////////////////////
+
+                
 
                 // Check if text needs wrapping
                 std::string wrappedTitle = sections[i].title;
@@ -3585,7 +3662,6 @@ static void RunGUI()
                 ImGui::PopStyleColor(2);
                 ImGui::PopID();
 
-                ImGui::Spacing();
                 ImGui::Spacing(); // Reduced from multiple ImGui::Spacing() calls to just one
             }
 
@@ -3593,7 +3669,7 @@ static void RunGUI()
 
             // Right panel - Settings
             ImGui::SameLine();
-            ImGui::BeginChild("SettingsPanel", ImVec2(right_panel_width, display_size.y - 320), true);
+            ImGui::BeginChild("SettingsPanel", ImVec2(right_panel_width, display_size.y - 154), true);
 
             if (selected_section >= 0 && selected_section < sections.size()) {
                 // Section header
@@ -3685,7 +3761,6 @@ static void RunGUI()
     AttachThreadInput(mainThreadId, guiThreadId, FALSE);
 }
 
-// Helper function to render section-specific settings
 static void RenderSectionSettings(int section) {
     const Theme& current_theme = (current_theme_index < themes.size()) ? themes[current_theme_index] : custom_theme;
 
@@ -3737,17 +3812,24 @@ static void RenderSectionSettings(int section) {
             ImGui::Checkbox("Auto Timing", &autotoggle);
             ImGui::Checkbox("Fast Mode (Speedrunning)", &fasthhj);
             ImGui::Separator();
+			ImGui::TextWrapped("This module abuses Roblox's conversion from angular velocity to regular velocity, and its flawed centre of mass calculation.");
+			ImGui::Separator();
 			ImGui::TextWrapped("IMPORTANT:");
-			ImGui::TextWrapped("FOR MOST OPTIMAL RESULTS PLEASE SET YOUR SENS AND CAM FIX ABOVE!");
+			ImGui::TextWrapped("Have your Sensitivity and Cam-Fix options set before using this module.");
 			ImGui::Separator();
 			ImGui::TextWrapped("Explanation:");
 			ImGui::NewLine();
-			ImGui::TextWrapped("This macro abuses Roblox's conversion from angular velocity to regular velocity. If you put your "
-								"back against a wall, rotate left 20-30 degrees, turn around 180 degrees, hold jump, and press W "
-								"as you land on the floor, then, activate the macro, and let go of W, if you did it correctly, "
-								"you will rotate into the wall, and get your feet stuck inside of it, the macro freezes the game "
-								"during this process, and you will be catapulted up DEPENDANT ON YOUR CENTER OF MASS OFFSET "
-								"Bigger COM offset = Easier to perform and higher height");
+			ImGui::TextWrapped("Assuming unequip com offset set to /e dance2 is used prior to offset com, to perform a Helicopter High Jump, "
+								"you want to align yourself with your back against the wall, and rotate slightly to the left (around 5-15 degrees). "
+								"Now, turn your camera to face directly towards the wall, turn it towards the left a similar amount (5-15 degrees), "
+								"in such a way that when you hold W, you turn INTO the wall, instead of away from it (the smaller the angle, the more "
+								"successful you'll be). Now, still keeping the alignment and camera angle, perform a normal lag high jump without "
+								"holding any movement keys. Instead of lagging, hold w, and press the assigned hotkey.");
+
+			ImGui::Separator();
+			ImGui::TextWrapped("If you are struggling with the lag high jump timing part, you can try using the \"Automatically time inputs\" feature. "
+								"Align in the exact same way as stated above, but instead doing the lhj motion, just press the assigned key. This should time "
+								"the two jumps, as well as the w tap for you. This can also act as a demonstration for what to do, when using manual activation of the module.");
             break;
 
         case 3: // Speedglitch
@@ -3762,17 +3844,19 @@ static void RenderSectionSettings(int section) {
             ImGui::Spacing();
             ImGui::Checkbox("Hold Mode", &isspeedswitch);
             ImGui::Separator();
-			ImGui::TextWrapped("IMPORTANT: FOR MOST OPTIMAL RESULTS, INPUT YOUR ROBLOX INGAME SENSITIVITY!");
-			ImGui::TextWrapped("FPS DOES AFFECT IT, HOWEVER, IT SHOULD WORK ON ALL!");
-			ImGui::TextWrapped("TICK OR UNTICK THE CHECKBOX DEPENDING ON WHETHER THE GAME USES CAM-FIX MODULE OR NOT. "
-								"If you don't know, do BOTH and check which one provides you with a 180 degree rotation. "
-								"Also, for convenience sake, you cannot activate speedglitch unless you're tabbed into roblox.");
+			ImGui::TextWrapped("This module abuses Roblox's conversion from angular velocity to regular velocity, and its flawed centre of mass calculation.");
+			ImGui::Separator();
+			ImGui::TextWrapped("IMPORTANT: Have your Sensitivity and Cam-Fix options set before using this module.");
 			ImGui::Separator();
 			ImGui::TextWrapped("Explanation:");
 			ImGui::NewLine();
-			ImGui::TextWrapped("This macro uses the way a changed center of mass affects your movement. If you offset your COM "
-								"in any way, and then toggle the macro, you will rotate 180 degrees every frame, holding W and "
-								"jump during this will catapult you forward.");
+
+			ImGui::TextWrapped("Assuming unequip \"/e dance2\" is used prior to offset com, to activate a speed glitch, enable shiftlock mode "
+								"(found in roblox settings), and press the keybind once to start the macro (or hold down if you are using the hold key option). "
+								"Note that the macro should rotate you exactly 180 degrees. If not, verify your Roblox sensitivity in the settings matches the Macros sensitivity value, "
+								"also, test out speedglitch with the \"Cam-Fix\" at the top left set to both true and false. Once the macro is activated, simply jump, and hold w. "
+								"As long as you are in the air, you will start to gain immense velocity towards the direction you are facing (assuming shiftlock has been held, and "
+								", and you are holding w). ");
             break;
 
         case 4: // Gear Unequip
@@ -3787,20 +3871,38 @@ static void RenderSectionSettings(int section) {
             ImGui::SetNextItemWidth(300);
             ImGui::InputText("##CustomText", CustomTextChar, sizeof(CustomTextChar));
 
-            ImGui::Text("Chat Key:");
-            ImGui::SetNextItemWidth(50);
-            ImGui::InputText("##ChatKey", ChatKeyChar, sizeof(ChatKeyChar), ImGuiInputTextFlags_CharsNoBlank);
-
-            ImGui::Spacing();
-            ImGui::Checkbox("Keep Item Equipped", &unequiptoggle);
-            ImGui::Separator();
-			ImGui::TextWrapped("Explanation:");
+            ImGui::SetNextItemWidth(150.0f);
+			if (ImGui::BeginCombo("Select Emote", optionsforoffset[selected_dropdown])) {
+				for (int i = 0; i < IM_ARRAYSIZE(optionsforoffset); i++) {
+					bool is_selected = (selected_dropdown == i);
+					if (ImGui::Selectable(optionsforoffset[i], is_selected)) {
+						selected_dropdown = i;  // Update the selected option
+						text = optionsforoffset[selected_dropdown];
+					}
+					if (is_selected) {
+						ImGui::SetItemDefaultFocus();  // Ensure the selected item has focus
+					}
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::Checkbox("Let the macro Keep the item equipped", &unequiptoggle);
+			ImGui::Checkbox("Make Unequip Com only work while tabbed into Roblox", &unequipinroblox);
+			ImGui::Separator();
+			ImGui::TextWrapped("This module allows you to trick Roblox into thinking your centre of mass is elsewhere. This is used in the Helicopter "
+								"High Jump, Speed Glitch and Walless LHJ modules (may change in the future).");
+			ImGui::Separator();
+			ImGui::TextWrapped("IMPORTANT: This ONLY works in R6. Although the glitch is possible in R15, the macro isn't built around that rig type. "
+								"An Item is also required, and must be placed in the corresponding gear slot (3 by default).");
 			ImGui::NewLine();
-			ImGui::TextWrapped("R6 ONLY!");
-			ImGui::TextWrapped("HAVE THE ITEM UNEQUIPPED BEFORE DOING THIS!!!");
-			ImGui::TextWrapped("Automatically performs a weaker version of the /e dance2 equip speedglitch, however, it unequips your gear. "
-								"Unequipping your gear will make HHJ's feel easier to perform, will keep COM after gear deletion, "
-								"AND, speedglitching while in this state will move you PERFECTLY forwards, no side movement.");
+			ImGui::TextWrapped("Usage:");
+			ImGui::TextWrapped("Assuming you have a gear ready, to get an offset com, put the gear into the corresponding gear slot (set above), "
+								"and press the keybind (F8 is used with the fn key). Note if the emote bugs out such as restarting halfway through, "
+								"or starting late due to a delay, your com may not be in its most offset state. Reusing the macro until the emote "
+								"plays out error free will fix this.");
+			ImGui::NewLine();
+			ImGui::TextWrapped(
+				"In most cases, you will be using the \"/e dance2\" emote, as that provides you with the furthest offset, although the other emotes "
+				"are still useful occasionaly, such as \"/e laugh\" for wraparounds, and \"/e cheer\" for walless lhjs.");
 
             break;
 
@@ -3825,13 +3927,46 @@ static void RenderSectionSettings(int section) {
             break;
 
         case 6: // Wallhop
-            ImGui::Text("Flick Pixels:");
+            
             ImGui::SetNextItemWidth(150);
+            ImGui::TextWrapped("Flick Degrees:");
+
+			ImGui::SetNextItemWidth(70.0f);
+			snprintf(WallhopDegrees, sizeof(WallhopDegrees), "%d", static_cast<int>(360 * (std::atof(WallhopPixels) * std::atof(RobloxSensValue)) / (camfixtoggle ? 1000 : 720)));
+					
+			if (ImGui::InputText("##WallhopDegrees", WallhopDegrees, sizeof(WallhopDegrees), ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank)) {
+				float pixels = std::atof(WallhopDegrees) * (camfixtoggle ? 1000.0f : 720.0f) / (360.0f * std::atof(RobloxSensValue));
+				snprintf(WallhopPixels, sizeof(WallhopPixels), "%.0f", pixels);
+				try {
+					wallhop_dx = std::round(std::stoi(WallhopPixels));
+					wallhop_dy = -std::round(std::stoi(WallhopPixels));
+				} catch (const std::invalid_argument &e) {
+				} catch (const std::out_of_range &e) {
+				}
+			}
+
+
+            ImGui::Text("Flick Pixels:");
+
             ImGui::InputText("##WallhopPixels", WallhopPixels, sizeof(WallhopPixels), ImGuiInputTextFlags_CharsDecimal);
             try {
                 wallhop_dx = std::round(std::stoi(WallhopPixels));
                 wallhop_dy = -std::round(std::stoi(WallhopPixels));
             } catch (...) {}
+
+            ImGui::TextWrapped("Wallhop Length (ms):");
+			ImGui::SetNextItemWidth(70.0f);
+			ImGui::InputText("##WallhopDelay", WallhopDelayChar, sizeof(WallhopDelayChar), ImGuiInputTextFlags_CharsDecimal);
+			try {
+				WallhopDelay = std::round(std::stoi(WallhopDelayChar));
+			} catch (...) {}
+
+			ImGui::TextWrapped("Delay Before Jumping (ms):");
+			ImGui::SetNextItemWidth(70.0f);
+			ImGui::InputText("##WallhopBonusDelay", WallhopBonusDelayChar, sizeof(WallhopBonusDelayChar), ImGuiInputTextFlags_CharsDecimal);
+			try {
+				WallhopBonusDelay = std::round(std::stoi(WallhopBonusDelayChar));
+			} catch (...) {}
 
             ImGui::Spacing();
             ImGui::Checkbox("Left-Flick Mode", &wallhopswitch);
@@ -4039,7 +4174,6 @@ static void RenderSectionSettings(int section) {
     }
 }
 
-
 static void SetWorkingDirectoryToExecutablePath() // Allows non-standard execution for save files
 {
     char exePath[MAX_PATH];
@@ -4074,17 +4208,16 @@ void CreateDebugConsole() {
         // Optional: Set console title
         SetConsoleTitle(L"Debug Console");
 
-        // Optional: Synchronize C++ streams with C stdio (if using std::cout)
-        // std::cout.sync_with_stdio(true);
+        std::cout.sync_with_stdio(true);
     }
 }
 
-// START OF PROGRAM 2
+// START OF CODE THREAD
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     DisablePowerThrottling();
-	// Create Debug Console, use Printf to use
+	// Create Debug Console, use DbgPrintf, printf, or cout to use
     // CreateDebugConsole();
 
 	// Run timers with max precision
@@ -4093,7 +4226,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// I LOVE THREAD PRIORITY!!!!!!!!!!!!!!!
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 
-	// Load Settings
+	// Set working directory
     SetWorkingDirectoryToExecutablePath();
 
 	// Check for any updates
@@ -4102,7 +4235,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     if (!remoteVersion.empty()) 
     {
         remoteVersion = Trim(remoteVersion);
-        std::string localVersion = "3.0.0.2";
+        std::string localVersion = "3.0.3.2";
 
         if (remoteVersion != localVersion) 
         {
@@ -4118,7 +4251,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             int result = MessageBoxW(NULL,
                 message.c_str(),
                 L"Update Available",
-                MB_YESNO | MB_ICONINFORMATION | MB_DEFBUTTON1 | MB_APPLMODAL);
+                MB_YESNOCANCEL | MB_ICONINFORMATION | MB_DEFBUTTON1 | MB_APPLMODAL);
 
             if (result == IDYES) 
             {
@@ -4128,6 +4261,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			if (result == IDNO) 
 			{
 				UserOutdated = true;
+			}
+		
+			if (result == IDCANCEL) 
+			{
+				exit(0);
 			}
         }
     }
@@ -4146,6 +4284,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	std::thread actionThread6(WallWalkLoop);
 	std::thread actionThread7(BhopLoop);
 	std::thread actionThread8(WallhopThread);
+	std::thread actionThread9(PressKeyThread);
 	
 	std::thread guiThread(RunGUI);
 	std::thread KeyboardThread(KeyboardHookThread);
@@ -4158,7 +4297,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	bool isdesync = false;
 	bool isSuspended = false; 
 	bool islhj = false;
-	bool ispressd = false;
+	bool ispresskey = false;
 	bool iswallhop = false;
 	bool isspeedglitch = false;
 	bool isunequipspeed = false;
@@ -4178,18 +4317,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	auto processchecktime = std::chrono::steady_clock::now();
 	static int counter = 0;
 
-	//////////////////////////
+    //////////////////////////
 	bool isLag = false;
 	////////////////////////// 
 
 	while (!done) {
+	bool tabbedintoroblox = IsForegroundWindowProcess(hProcess);
     {
+		tabbedintoroblox = IsForegroundWindowProcess(hProcess);
 		// Freeze
 		if ((macrotoggled && notbinding && section_toggles[0])) {
 			bool isMButtonPressed = GetAsyncKeyState(vk_mbutton) & 0x8000;
 
 			if (isfreezeswitch) {  // Toggle mode
-				if (isMButtonPressed && !wasMButtonPressed && (freezeoutsideroblox || IsForegroundWindowProcess(hProcess))) {  // Detect button press edge
+				if (isMButtonPressed && !wasMButtonPressed && (freezeoutsideroblox || tabbedintoroblox)) {  // Detect button press edge
 					isSuspended = !isSuspended;  // Toggle the freeze state
 					SuspendOrResumeProcess(pfnSuspend, pfnResume, hProcess, isSuspended);
 
@@ -4198,7 +4339,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					}
 				}
 			} else {  // Hold mode
-				if (isMButtonPressed && (freezeoutsideroblox || IsForegroundWindowProcess(hProcess))) {
+				if (isMButtonPressed && (freezeoutsideroblox || tabbedintoroblox)) {
 					if (!isSuspended) {
 						SuspendOrResumeProcess(pfnSuspend, pfnResume, hProcess, true);  // Freeze on hold
 						isSuspended = true;
@@ -4230,30 +4371,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		// Item Desync Macro with anti-idiot design
-		if ((GetAsyncKeyState(vk_f5) & 0x8000) && IsForegroundWindowProcess(hProcess) && macrotoggled && notbinding && section_toggles[1]) {
+		if ((GetAsyncKeyState(vk_f5) & 0x8000) && tabbedintoroblox && macrotoggled && notbinding && section_toggles[1]) {
 			if (!isdesync) {
-				isdesyncloop = true;
+				isdesyncloop.store(true, std::memory_order_relaxed);
 				isdesync = true;
 			}
 		} else {
 			isdesync = false;
-			isdesyncloop = false;
+			isdesyncloop.store(false, std::memory_order_relaxed);
 		}
 
 		// PressKey
-		if ((GetAsyncKeyState(vk_zkey) & 0x8000) && macrotoggled && notbinding && section_toggles[5]) {
-			if (!ispressd) {
-				if (vk_zkey == vk_dkey) {
-					ReleaseKeyBinded(vk_zkey);
-				}
-
-				HoldKeyBinded(vk_dkey);
-				std::this_thread::sleep_for(std::chrono::milliseconds(6));
-				ReleaseKeyBinded(vk_dkey);
-				ispressd = true;
+		if ((GetAsyncKeyState(vk_zkey) & 0x8000) && macrotoggled && notbinding && section_toggles[5] && (!presskeyinroblox || tabbedintoroblox)) {
+			if (!ispresskey) {
+				ispresskeythread.store(true, std::memory_order_relaxed);
+				ispresskey = true;
 			}
 		} else {
-			ispressd = false;
+			ispresskey = false;
+			ispresskeythread.store(false, std::memory_order_relaxed);
 		}
 
 		// Wallhop (Ran in separate thread)
@@ -4298,7 +4434,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		// Speedglitch
-		if ((GetAsyncKeyState(vk_xkey) & 0x8000) && IsForegroundWindowProcess(hProcess) && macrotoggled && notbinding && section_toggles[3]) {
+		if ((GetAsyncKeyState(vk_xkey) & 0x8000) && tabbedintoroblox && macrotoggled && notbinding && section_toggles[3]) {
 			if (!isspeedglitch) {
 				isspeed = !isspeed;
 				isspeedglitch = true;
@@ -4311,7 +4447,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		// Gear Unequip COM Speed
-		if ((GetAsyncKeyState(vk_f8) & 0x8000) && macrotoggled && notbinding && section_toggles[4]) {
+		if ((GetAsyncKeyState(vk_f8) & 0x8000) && macrotoggled && notbinding && section_toggles[4] && (!unequipinroblox || tabbedintoroblox)) {
 			if (!isunequipspeed) {
 				if (chatoverride) {
 					HoldKey(0x35);
@@ -4420,7 +4556,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		// Laughkey
-		if ((GetAsyncKeyState(vk_laughkey) & 0x8000) && IsForegroundWindowProcess(hProcess) && macrotoggled && notbinding && section_toggles[9]) {
+		if ((GetAsyncKeyState(vk_laughkey) & 0x8000) && tabbedintoroblox && macrotoggled && notbinding && section_toggles[9]) {
 			if (!islaugh) {
 				if (chatoverride) {
 					HoldKey(0x35);
@@ -4467,42 +4603,54 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
 		// Ledge Bounce
-		if ((GetAsyncKeyState(vk_bouncekey) & 0x8000) && IsForegroundWindowProcess(hProcess) && macrotoggled && notbinding && section_toggles[12]) {
+		if ((GetAsyncKeyState(vk_bouncekey) & 0x8000) && tabbedintoroblox && macrotoggled && notbinding && section_toggles[12]) {
 			if (!isbounce) {
-				int turn90 = (180 / atof(RobloxSensValue));
-				int skey = 0x1F;
-				int dkey = 0x20;
-				int wkey = 0x11;
+				int turn90 = (camfixtoggle ? 250 : 180) / atof(RobloxSensValue);
+				int skey = 0x1F; // S key
+				int dkey = 0x20; // D key
+				int wkey = 0x11; // W key
+
 				if (bouncesidetoggle) {
 					turn90 = -turn90;
-					dkey = 0x1E;
+					dkey = 0x1E; // A Key
 				}
 
-				MoveMouse(-turn90, 0);  // Left
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				MoveMouse(-turn90, 0); // Turn Left
+				std::this_thread::sleep_for(std::chrono::milliseconds(90));
 				HoldKey(skey); // Hold S
-				std::this_thread::sleep_for(std::chrono::milliseconds(16));
-				ReleaseKey(skey);     // Release S
-				HoldKey(dkey);        // Hold D
-				MoveMouse(turn90, 0); // Right
-				std::this_thread::sleep_for(std::chrono::microseconds(3030));
-				ReleaseKey(dkey); // Release D
+				std::this_thread::sleep_for(std::chrono::milliseconds(40));
+				ReleaseKey(skey); // Release S
+				MoveMouse(turn90, 0); // Turn Right
+				HoldKey(dkey);    // Hold D
 
-				if (!bouncerealignsideways && !bounceautohold) {
-				} else {
-					HoldKey(0x11); // Hold W
-				}
+
+				std::this_thread::sleep_for(std::chrono::milliseconds(16));
 
 				if (bouncerealignsideways) {
-					MoveMouse(turn90, 0); // Right
-					std::this_thread::sleep_for(std::chrono::milliseconds(50));
+					ReleaseKey(dkey); // Release D
+					HoldKey(wkey); // Hold W
+				}
+
+				if (!bouncerealignsideways) {
+					ReleaseKey(dkey);
+				}
+
+				// After Bounce
+				if (bouncerealignsideways) {
+					MoveMouse(turn90, 0); // Turn Right to face towards ledge
+					std::this_thread::sleep_for(std::chrono::milliseconds(70));
 					ReleaseKey(wkey);      // Release W
-					MoveMouse(-turn90, 0); // Left
+					MoveMouse(-turn90, 0); // Turn Left to face normally
+					// Right facing end
 					if (bounceautohold) {
 						HoldKey(dkey); // Hold D
 					}
 				} else {
-					MoveMouse(turn90, 0); // Right
+					// Front Facing End
+					if (bounceautohold) {
+						HoldKey(wkey); // Hold W
+					}
+					MoveMouse(turn90, 0); // Turn Right
 				}
 
 				isbounce = true;
@@ -4513,7 +4661,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
 		// Item Clip
-		if ((GetAsyncKeyState(vk_clipkey) & 0x8000) && IsForegroundWindowProcess(hProcess) && macrotoggled && notbinding && section_toggles[8]) {
+		if ((GetAsyncKeyState(vk_clipkey) & 0x8000) && tabbedintoroblox && macrotoggled && notbinding && section_toggles[8]) {
 			if (!isclip) {
 				isitemloop = !isitemloop;
 				isclip = true;
@@ -4527,7 +4675,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
 		// WallWalk
-		if ((GetAsyncKeyState(vk_wallkey) & 0x8000) && IsForegroundWindowProcess(hProcess) && macrotoggled && notbinding && section_toggles[10]) {
+		if ((GetAsyncKeyState(vk_wallkey) & 0x8000) && tabbedintoroblox && macrotoggled && notbinding && section_toggles[10]) {
 			if (!iswallwalk) {
 				iswallwalkloop = !iswallwalkloop;
 				iswallwalk = true;
@@ -4539,7 +4687,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		bool can_process_bhop = GetAsyncKeyState(vk_bunnyhopkey) && IsForegroundWindowProcess(hProcess) && section_toggles[13] && macrotoggled && notbinding;
+		bool can_process_bhop = GetAsyncKeyState(vk_bunnyhopkey) && tabbedintoroblox && section_toggles[13] && macrotoggled && notbinding;
 
 		if (GetAsyncKeyState(vk_chatkey) & 0x8000) {
 			bhoplocked = true;
@@ -4581,7 +4729,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		////////////////////////// 
+        ////////////////////////// 
 		// Lag
 		if ((macrotoggled && notbinding && section_toggles[14])) {
 			bool isLagPressed = GetAsyncKeyState(vk_Lagkey) & 0x8000;
@@ -4630,7 +4778,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			
 
 			HWND targetHwnd = GetWindowFromProcess(hProcess);
-			bool shouldShowOverlay = (targetHwnd && IsForegroundWindowProcess(hProcess) &&
+			bool shouldShowOverlay = (targetHwnd && tabbedintoroblox &&
 						  !IsIconic(targetHwnd));
 
 			if (lagoverlayswitch && shouldShowOverlay) {
@@ -4688,7 +4836,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		// Anti AFK (MUST STAY AT THE LOWEST PART OF THE LIST!!!)
-		if (!isafk && IsForegroundWindowProcess(hProcess)) {
+		if (!isafk && tabbedintoroblox) {
 			// Not Afk, reset lastpresstime
 			lastPressTime = std::chrono::steady_clock::now();
 		} else {
@@ -4763,7 +4911,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 	
 	// Automatically turn off these 4 modules if you leave roblox window (so it isn't annoying)
-	if (!IsForegroundWindowProcess(hProcess)) {
+	if (!tabbedintoroblox) {
 		isbhoploop = false;
 		iswallwalkloop = false;
 		isitemloop = false;
@@ -4774,6 +4922,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	std::this_thread::sleep_for(std::chrono::microseconds(50)); // Delay between main code loop (so your cpu doesn't die instantly)
 
 }
+
+	// Save Window Positions and Size before closing
+	RECT windowrect;
+	GetWindowRect(hwnd, &windowrect);
+
+	if (windowrect.left < 0) {
+		WindowPosX = 0;
+	} else {
+		WindowPosX = windowrect.left;
+	}
+
+	if (windowrect.top < 0) {
+		WindowPosY = 0;
+	} else {
+		WindowPosY = windowrect.top;
+	}
+
+	RECT screen_rect;
+
+	GetWindowRect(hwnd, &screen_rect);
+
+	screen_width = screen_rect.right - screen_rect.left;
+	screen_height = screen_rect.bottom - screen_rect.top;
 
 	// If save file, save normally, if not, save as Profile 1
 	if (!G_CURRENTLY_LOADED_PROFILE_NAME.empty()) {
@@ -4790,6 +4961,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		UnhookWindowsHookEx(g_keyboardHook);
 		g_keyboardHook = NULL;
 	}
+
 
 	guiThread.join();
 
